@@ -54,12 +54,21 @@ export interface DetailedTitle {
 
 export interface Filters {
   mediaType: 'both' | MediaType
-  genreIds: number[]
+  genreLabels: string[]
   yearMin: number
   yearMax: number
   minRating: number
+  durationMin: number
+  durationMax: number
   providerIds: number[]
   includeSeen: boolean
+  personQuery: string
+}
+
+export interface UnifiedGenre {
+  label: string
+  movieIds: number[]
+  tvIds: number[]
 }
 
 export interface SeenEntry {

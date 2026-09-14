@@ -3,18 +3,21 @@ import FilterPanel from './components/FilterPanel'
 import Library from './components/Library'
 import ResultCard from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
-import { fetchDetails, fetchGenres, fetchPopularProviders, pickRandom, TmdbError } from './lib/tmdb'
+import { fetchDetails, fetchGenres, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError, UNIFIED_GENRES } from './lib/tmdb'
 import { getApiKey, getFilters, getMyProviders, getSeenList, removeSeenEntry, saveFilters, upsertSeenEntry } from './lib/storage'
 import type { DetailedTitle, Filters, Genre, SeenEntry, WatchProvider } from './types'
 
 const DEFAULT_FILTERS: Filters = {
   mediaType: 'both',
-  genreIds: [],
+  genreLabels: [],
   yearMin: 1970,
   yearMax: new Date().getFullYear(),
   minRating: 5,
+  durationMin: 0,
+  durationMax: 240,
   providerIds: [],
   includeSeen: false,
+  personQuery: '',
 }
 
 type Tab = 'tirage' | 'bibliotheque' | 'reglages'
@@ -52,10 +55,10 @@ export default function App() {
     saveFilters(next)
   }
 
-  const genresForFilter = useMemo(() => {
-    if (filters.mediaType === 'movie') return movieGenres
-    if (filters.mediaType === 'tv') return tvGenres
-    return []
+  const genreCatalog = useMemo(() => {
+    if (filters.mediaType === 'movie') return movieGenres.map((g) => g.name)
+    if (filters.mediaType === 'tv') return tvGenres.map((g) => g.name)
+    return UNIFIED_GENRES.map((g) => g.label)
   }, [filters.mediaType, movieGenres, tvGenres])
 
   const excludeIds = useMemo(() => new Set(seenList.map((e) => e.id)), [seenList])
@@ -66,7 +69,20 @@ export default function App() {
     setResult(null)
     try {
       const effectiveExclude = filters.includeSeen ? new Set<number>() : excludeIds
-      const picked = await pickRandom(filters, effectiveExclude)
+      const personName = filters.personQuery.trim()
+
+      let picked: Awaited<ReturnType<typeof pickRandom>>
+      if (personName) {
+        const person = await searchPerson(personName)
+        if (!person) {
+          setError(`Aucune personne trouvée pour "${personName}".`)
+          return
+        }
+        picked = await pickRandomFromPerson(person.id, filters, effectiveExclude, movieGenres, tvGenres)
+      } else {
+        picked = await pickRandom(filters, effectiveExclude, movieGenres, tvGenres)
+      }
+
       if (!picked) {
         setError("Aucun résultat ne correspond à ces filtres. Essaie d'en assouplir quelques-uns.")
         return
@@ -187,7 +203,7 @@ export default function App() {
             <FilterPanel
               filters={filters}
               onChange={setFilters}
-              genres={genresForFilter}
+              genreCatalog={genreCatalog}
               providers={providers}
               myProviders={myProviders}
             />

@@ -1,22 +1,22 @@
-import type { Filters, Genre, WatchProvider } from '../types'
+import type { Filters, WatchProvider } from '../types'
 import { providerLogoUrl } from '../lib/tmdb'
 
 interface Props {
   filters: Filters
   onChange: (filters: Filters) => void
-  genres: Genre[]
+  genreCatalog: string[]
   providers: WatchProvider[]
   myProviders: number[]
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
 
-export default function FilterPanel({ filters, onChange, genres, providers, myProviders }: Props) {
-  function toggleGenre(id: number) {
-    const genreIds = filters.genreIds.includes(id)
-      ? filters.genreIds.filter((g) => g !== id)
-      : [...filters.genreIds, id]
-    onChange({ ...filters, genreIds })
+export default function FilterPanel({ filters, onChange, genreCatalog, providers, myProviders }: Props) {
+  function toggleGenre(label: string) {
+    const genreLabels = filters.genreLabels.includes(label)
+      ? filters.genreLabels.filter((g) => g !== label)
+      : [...filters.genreLabels, label]
+    onChange({ ...filters, genreLabels })
   }
 
   function toggleProvider(id: number) {
@@ -25,6 +25,8 @@ export default function FilterPanel({ filters, onChange, genres, providers, myPr
       : [...filters.providerIds, id]
     onChange({ ...filters, providerIds })
   }
+
+  const hasPersonQuery = filters.personQuery.trim().length > 0
 
   return (
     <div className="space-y-5 rounded-lg border border-cream/10 bg-panel p-5">
@@ -45,32 +47,50 @@ export default function FilterPanel({ filters, onChange, genres, providers, myPr
         </div>
       </div>
 
-      {genres.length > 0 && (
+      {genreCatalog.length > 0 && (
         <div>
           <p className="mb-2 font-display text-sm uppercase tracking-wide text-sand">Genres</p>
           <div className="flex flex-wrap gap-2">
-            {genres.map((g) => (
+            {genreCatalog.map((label) => (
               <button
-                key={g.id}
-                onClick={() => toggleGenre(g.id)}
+                key={label}
+                onClick={() => toggleGenre(label)}
                 className={`rounded-full px-3 py-1 text-xs transition ${
-                  filters.genreIds.includes(g.id) ? 'bg-gold text-night' : 'bg-panel-2 text-sand hover:text-cream'
+                  filters.genreLabels.includes(label) ? 'bg-gold text-night' : 'bg-panel-2 text-sand hover:text-cream'
                 }`}
               >
-                {g.name}
+                {label}
               </button>
             ))}
           </div>
         </div>
       )}
 
+      <label className="block text-sm text-sand">
+        Acteur ou réalisateur
+        <input
+          type="text"
+          value={filters.personQuery}
+          onChange={(e) => onChange({ ...filters, personQuery: e.target.value })}
+          placeholder="Ex. Marion Cotillard, Bong Joon-ho…"
+          className="mt-1 w-full rounded-md border border-cream/10 bg-panel-2 px-3 py-2 text-cream outline-none placeholder:text-sand/50 focus:border-gold"
+        />
+        {hasPersonQuery && (
+          <span className="mt-1 block text-xs text-sand/70">
+            Cible toute la filmographie de cette personne. Les filtres plateformes et durée ne s'appliquent pas dans ce mode
+            (non fournis par l'API pour une recherche par personne).
+          </span>
+        )}
+      </label>
+
       {providers.length > 0 && (
-        <div>
+        <div className={hasPersonQuery ? 'opacity-40' : undefined}>
           <div className="mb-2 flex items-center justify-between">
             <p className="font-display text-sm uppercase tracking-wide text-sand">Plateformes</p>
             {myProviders.length > 0 && (
               <button
                 onClick={() => onChange({ ...filters, providerIds: myProviders })}
+                disabled={hasPersonQuery}
                 className="text-xs text-gold hover:text-cream"
               >
                 Utiliser mes plateformes
@@ -82,6 +102,7 @@ export default function FilterPanel({ filters, onChange, genres, providers, myPr
               <button
                 key={p.provider_id}
                 onClick={() => toggleProvider(p.provider_id)}
+                disabled={hasPersonQuery}
                 title={p.provider_name}
                 className={`overflow-hidden rounded-md border-2 transition ${
                   filters.providerIds.includes(p.provider_id)
@@ -116,6 +137,35 @@ export default function FilterPanel({ filters, onChange, genres, providers, myPr
             min={filters.yearMin}
             max={CURRENT_YEAR}
             onChange={(e) => onChange({ ...filters, yearMax: Number(e.target.value) })}
+            className="mt-1 w-full rounded-md border border-cream/10 bg-panel-2 px-3 py-2 text-cream outline-none focus:border-gold"
+          />
+        </label>
+      </div>
+
+      <div className={`grid grid-cols-2 gap-4 ${hasPersonQuery ? 'opacity-40' : ''}`}>
+        <label className="text-sm text-sand">
+          Durée min. (min)
+          <input
+            type="number"
+            value={filters.durationMin}
+            min={0}
+            max={filters.durationMax}
+            step={5}
+            disabled={hasPersonQuery}
+            onChange={(e) => onChange({ ...filters, durationMin: Number(e.target.value) })}
+            className="mt-1 w-full rounded-md border border-cream/10 bg-panel-2 px-3 py-2 text-cream outline-none focus:border-gold"
+          />
+        </label>
+        <label className="text-sm text-sand">
+          Durée max. (min)
+          <input
+            type="number"
+            value={filters.durationMax}
+            min={filters.durationMin}
+            max={240}
+            step={5}
+            disabled={hasPersonQuery}
+            onChange={(e) => onChange({ ...filters, durationMax: Number(e.target.value) })}
             className="mt-1 w-full rounded-md border border-cream/10 bg-panel-2 px-3 py-2 text-cream outline-none focus:border-gold"
           />
         </label>
