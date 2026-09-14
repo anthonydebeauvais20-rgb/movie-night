@@ -1,29 +1,19 @@
-import type { Filters, WatchProvider } from '../types'
-import { providerLogoUrl } from '../lib/tmdb'
+import type { Filters } from '../types'
 
 interface Props {
   filters: Filters
   onChange: (filters: Filters) => void
   genreCatalog: string[]
-  providers: WatchProvider[]
-  myProviders: number[]
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
 
-export default function FilterPanel({ filters, onChange, genreCatalog, providers, myProviders }: Props) {
+export default function FilterPanel({ filters, onChange, genreCatalog }: Props) {
   function toggleGenre(label: string) {
     const genreLabels = filters.genreLabels.includes(label)
       ? filters.genreLabels.filter((g) => g !== label)
       : [...filters.genreLabels, label]
     onChange({ ...filters, genreLabels })
-  }
-
-  function toggleProvider(id: number) {
-    const providerIds = filters.providerIds.includes(id)
-      ? filters.providerIds.filter((p) => p !== id)
-      : [...filters.providerIds, id]
-    onChange({ ...filters, providerIds })
   }
 
   const hasPersonQuery = filters.personQuery.trim().length > 0
@@ -77,45 +67,11 @@ export default function FilterPanel({ filters, onChange, genreCatalog, providers
         />
         {hasPersonQuery && (
           <span className="mt-1 block text-xs text-sand/70">
-            Cible toute la filmographie de cette personne. Les filtres plateformes et durée ne s'appliquent pas dans ce mode
-            (non fournis par l'API pour une recherche par personne).
+            Cible toute la filmographie de cette personne. Les filtres plateformes (Réglages) et durée ne s'appliquent pas
+            dans ce mode (non fournis par l'API pour une recherche par personne).
           </span>
         )}
       </label>
-
-      {providers.length > 0 && (
-        <div className={hasPersonQuery ? 'opacity-40' : undefined}>
-          <div className="mb-2 flex items-center justify-between">
-            <p className="font-display text-sm uppercase tracking-wide text-sand">Plateformes</p>
-            {myProviders.length > 0 && (
-              <button
-                onClick={() => onChange({ ...filters, providerIds: myProviders })}
-                disabled={hasPersonQuery}
-                className="text-xs text-gold hover:text-cream"
-              >
-                Utiliser mes plateformes
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {providers.map((p) => (
-              <button
-                key={p.provider_id}
-                onClick={() => toggleProvider(p.provider_id)}
-                disabled={hasPersonQuery}
-                title={p.provider_name}
-                className={`overflow-hidden rounded-md border-2 transition ${
-                  filters.providerIds.includes(p.provider_id)
-                    ? 'border-gold'
-                    : 'border-transparent opacity-60 hover:opacity-100'
-                }`}
-              >
-                <img src={providerLogoUrl(p.logo_path)} alt={p.provider_name} className="h-9 w-9" />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-4">
         <label className="text-sm text-sand">

@@ -96,7 +96,13 @@ interface DiscoverResponse {
   results: TmdbListItem[]
 }
 
-async function discover(mediaType: MediaType, filters: Filters, page: number, genreIds: number[]): Promise<DiscoverResponse> {
+async function discover(
+  mediaType: MediaType,
+  filters: Filters,
+  page: number,
+  genreIds: number[],
+  providerIds: number[],
+): Promise<DiscoverResponse> {
   const region = getRegion()
   const dateField = mediaType === 'movie' ? 'primary_release_date' : 'first_air_date'
 
@@ -104,7 +110,7 @@ async function discover(mediaType: MediaType, filters: Filters, page: number, ge
     page,
     sort_by: 'popularity.desc',
     watch_region: region,
-    with_watch_providers: filters.providerIds.length ? filters.providerIds.join('|') : undefined,
+    with_watch_providers: providerIds.length ? providerIds.join('|') : undefined,
     with_genres: genreIds.length ? genreIds.join(',') : undefined,
     [`${dateField}.gte`]: `${filters.yearMin}-01-01`,
     [`${dateField}.lte`]: `${filters.yearMax}-12-31`,
@@ -124,9 +130,10 @@ export async function pickRandomTitle(
   excludeIds: Set<number>,
   movieGenres: Genre[],
   tvGenres: Genre[],
+  providerIds: number[],
 ): Promise<TmdbListItem | null> {
   const genreIds = resolveGenreIds(filters.genreLabels, mediaType, movieGenres, tvGenres)
-  const firstPage = await discover(mediaType, filters, 1, genreIds)
+  const firstPage = await discover(mediaType, filters, 1, genreIds, providerIds)
   if (firstPage.total_results === 0) return null
 
   const pageCap = Math.min(firstPage.total_pages, MAX_PAGE_CAP)
@@ -140,7 +147,7 @@ export async function pickRandomTitle(
     }
     triedPages.add(page)
 
-    const data = page === 1 ? firstPage : await discover(mediaType, filters, page, genreIds)
+    const data = page === 1 ? firstPage : await discover(mediaType, filters, page, genreIds, providerIds)
     const candidates = data.results.filter((r) => !excludeIds.has(r.id))
     if (candidates.length > 0) {
       return candidates[Math.floor(Math.random() * candidates.length)]
@@ -156,19 +163,20 @@ export async function pickRandom(
   excludeIds: Set<number>,
   movieGenres: Genre[],
   tvGenres: Genre[],
+  providerIds: number[],
 ): Promise<{ item: TmdbListItem; mediaType: MediaType } | null> {
   if (filters.mediaType !== 'both') {
-    const item = await pickRandomTitle(filters.mediaType, filters, excludeIds, movieGenres, tvGenres)
+    const item = await pickRandomTitle(filters.mediaType, filters, excludeIds, movieGenres, tvGenres, providerIds)
     return item ? { item, mediaType: filters.mediaType } : null
   }
 
   const first: MediaType = Math.random() < 0.5 ? 'movie' : 'tv'
   const second: MediaType = first === 'movie' ? 'tv' : 'movie'
 
-  const firstItem = await pickRandomTitle(first, filters, excludeIds, movieGenres, tvGenres)
+  const firstItem = await pickRandomTitle(first, filters, excludeIds, movieGenres, tvGenres, providerIds)
   if (firstItem) return { item: firstItem, mediaType: first }
 
-  const secondItem = await pickRandomTitle(second, filters, excludeIds, movieGenres, tvGenres)
+  const secondItem = await pickRandomTitle(second, filters, excludeIds, movieGenres, tvGenres, providerIds)
   return secondItem ? { item: secondItem, mediaType: second } : null
 }
 

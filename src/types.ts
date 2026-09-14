@@ -60,7 +60,6 @@ export interface Filters {
   minRating: number
   durationMin: number
   durationMax: number
-  providerIds: number[]
   includeSeen: boolean
   personQuery: string
 }

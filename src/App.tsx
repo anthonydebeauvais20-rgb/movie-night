@@ -15,7 +15,6 @@ const DEFAULT_FILTERS: Filters = {
   minRating: 5,
   durationMin: 0,
   durationMax: 240,
-  providerIds: [],
   includeSeen: false,
   personQuery: '',
 }
@@ -80,7 +79,7 @@ export default function App() {
         }
         picked = await pickRandomFromPerson(person.id, filters, effectiveExclude, movieGenres, tvGenres)
       } else {
-        picked = await pickRandom(filters, effectiveExclude, movieGenres, tvGenres)
+        picked = await pickRandom(filters, effectiveExclude, movieGenres, tvGenres, myProviders)
       }
 
       if (!picked) {
@@ -156,7 +155,27 @@ export default function App() {
     <div className="min-h-full">
       <header className="border-b border-cream/10 bg-panel/60">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-          <h1 className="font-display text-xl font-extrabold uppercase tracking-wide text-gold">🎬 Movie Night</h1>
+          <h1 className="flex items-center gap-2 font-display text-xl font-extrabold uppercase tracking-wide text-gold">
+            <svg viewBox="0 0 64 64" className="h-7 w-7 shrink-0" aria-hidden="true">
+              <circle cx="32" cy="32" r="30" fill="#8c2f39" />
+              <mask id="header-logo-mask">
+                <rect width="64" height="64" fill="black" />
+                <rect x="8" y="16" width="48" height="32" rx="6" fill="white" />
+                <circle cx="8" cy="32" r="6" fill="black" />
+                <circle cx="56" cy="32" r="6" fill="black" />
+                <circle cx="32" cy="24" r="2.3" fill="black" />
+                <circle cx="46" cy="24" r="2.3" fill="black" />
+                <circle cx="39" cy="32" r="2.3" fill="black" />
+                <circle cx="32" cy="40" r="2.3" fill="black" />
+                <circle cx="46" cy="40" r="2.3" fill="black" />
+              </mask>
+              <g mask="url(#header-logo-mask)">
+                <rect width="64" height="64" fill="#e7b44c" />
+              </g>
+              <line x1="22" y1="16" x2="22" y2="48" stroke="#100d12" strokeWidth="2" strokeDasharray="3 3" />
+            </svg>
+            Movie Night
+          </h1>
           <nav className="flex gap-1 rounded-full bg-panel-2 p-1">
             {(
               [
@@ -200,13 +219,7 @@ export default function App() {
           <Library entries={seenList} onUpdate={handleUpdateLibraryEntry} onRemove={handleRemoveLibraryEntry} />
         ) : (
           <div className="space-y-5">
-            <FilterPanel
-              filters={filters}
-              onChange={setFilters}
-              genreCatalog={genreCatalog}
-              providers={providers}
-              myProviders={myProviders}
-            />
+            <FilterPanel filters={filters} onChange={setFilters} genreCatalog={genreCatalog} />
 
             <button
               onClick={handleDraw}
