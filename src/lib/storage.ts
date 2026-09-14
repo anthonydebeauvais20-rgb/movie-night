@@ -1,4 +1,4 @@
-import type { Filters, SeenEntry } from '../types'
+import type { Filters, SeenEntry, WatchlistEntry } from '../types'
 
 const KEYS = {
   apiKey: 'movienight:apiKey',
@@ -6,6 +6,7 @@ const KEYS = {
   seen: 'movienight:seen',
   filters: 'movienight:filters',
   myProviders: 'movienight:myProviders',
+  watchlist: 'movienight:watchlist',
 } as const
 
 export function getApiKey(): string {
@@ -82,4 +83,32 @@ export function getMyProviders(): number[] {
 
 export function setMyProviders(ids: number[]): void {
   localStorage.setItem(KEYS.myProviders, JSON.stringify(ids))
+}
+
+export function getWatchlist(): WatchlistEntry[] {
+  const raw = localStorage.getItem(KEYS.watchlist)
+  if (!raw) return []
+  try {
+    return JSON.parse(raw) as WatchlistEntry[]
+  } catch {
+    return []
+  }
+}
+
+function saveWatchlist(list: WatchlistEntry[]): void {
+  localStorage.setItem(KEYS.watchlist, JSON.stringify(list))
+}
+
+export function addToWatchlist(entry: WatchlistEntry): WatchlistEntry[] {
+  const list = getWatchlist()
+  if (list.some((e) => e.id === entry.id && e.mediaType === entry.mediaType)) return list
+  const next = [entry, ...list]
+  saveWatchlist(next)
+  return next
+}
+
+export function removeFromWatchlist(id: number, mediaType: string): WatchlistEntry[] {
+  const list = getWatchlist().filter((e) => !(e.id === id && e.mediaType === mediaType))
+  saveWatchlist(list)
+  return list
 }

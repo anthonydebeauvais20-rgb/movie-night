@@ -4,8 +4,19 @@ import Library from './components/Library'
 import ResultCard from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
 import { fetchDetails, fetchGenres, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError, UNIFIED_GENRES } from './lib/tmdb'
-import { getApiKey, getFilters, getMyProviders, getSeenList, removeSeenEntry, saveFilters, upsertSeenEntry } from './lib/storage'
-import type { DetailedTitle, Filters, Genre, SeenEntry, WatchProvider } from './types'
+import {
+  addToWatchlist,
+  getApiKey,
+  getFilters,
+  getMyProviders,
+  getSeenList,
+  getWatchlist,
+  removeFromWatchlist,
+  removeSeenEntry,
+  saveFilters,
+  upsertSeenEntry,
+} from './lib/storage'
+import type { DetailedTitle, Filters, Genre, SeenEntry, WatchlistEntry, WatchProvider } from './types'
 
 const DEFAULT_FILTERS: Filters = {
   mediaType: 'both',
@@ -32,6 +43,7 @@ export default function App() {
 
   const [myProviders, setMyProvidersState] = useState<number[]>(() => getMyProviders())
   const [seenList, setSeenList] = useState<SeenEntry[]>(() => getSeenList())
+  const [watchlist, setWatchlist] = useState<WatchlistEntry[]>(() => getWatchlist())
   const [result, setResult] = useState<DetailedTitle | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -67,7 +79,8 @@ export default function App() {
     setError(null)
     setResult(null)
     try {
-      const effectiveExclude = filters.includeSeen ? new Set<number>() : excludeIds
+      const effectiveExclude = new Set(filters.includeSeen ? [] : excludeIds)
+      if (result) effectiveExclude.add(result.id)
       const personName = filters.personQuery.trim()
 
       let picked: Awaited<ReturnType<typeof pickRandom>>
@@ -107,6 +120,10 @@ export default function App() {
     return seenList.some((e) => e.id === id && e.mediaType === mediaType && e.favorite)
   }
 
+  function isInWatchlist(id: number, mediaType: string) {
+    return watchlist.some((e) => e.id === id && e.mediaType === mediaType)
+  }
+
   function handleMarkSeen() {
     if (!result) return
     const existing = seenList.find((e) => e.id === result.id && e.mediaType === result.mediaType)
@@ -143,12 +160,51 @@ export default function App() {
     setSeenList(upsertSeenEntry(entry))
   }
 
+  function handleToggleWatchlist() {
+    if (!result) return
+    if (isInWatchlist(result.id, result.mediaType)) {
+      setWatchlist(removeFromWatchlist(result.id, result.mediaType))
+    } else {
+      setWatchlist(
+        addToWatchlist({
+          id: result.id,
+          mediaType: result.mediaType,
+          title: result.title,
+          posterPath: result.posterPath,
+          year: result.year,
+          dateAdded: new Date().toISOString(),
+        }),
+      )
+    }
+  }
+
   function handleUpdateLibraryEntry(entry: SeenEntry) {
     setSeenList(upsertSeenEntry(entry))
   }
 
   function handleRemoveLibraryEntry(id: number, mediaType: string) {
     setSeenList(removeSeenEntry(id, mediaType))
+  }
+
+  function handleRemoveFromWatchlist(id: number, mediaType: string) {
+    setWatchlist(removeFromWatchlist(id, mediaType))
+  }
+
+  function handleMoveWatchlistToSeen(entry: WatchlistEntry) {
+    setSeenList(
+      upsertSeenEntry({
+        id: entry.id,
+        mediaType: entry.mediaType,
+        title: entry.title,
+        posterPath: entry.posterPath,
+        year: entry.year,
+        dateAdded: new Date().toISOString(),
+        rating: null,
+        comment: '',
+        favorite: false,
+      }),
+    )
+    setWatchlist(removeFromWatchlist(entry.id, entry.mediaType))
   }
 
   return (
@@ -216,7 +272,14 @@ export default function App() {
             }}
           />
         ) : tab === 'bibliotheque' ? (
-          <Library entries={seenList} onUpdate={handleUpdateLibraryEntry} onRemove={handleRemoveLibraryEntry} />
+          <Library
+            entries={seenList}
+            onUpdate={handleUpdateLibraryEntry}
+            onRemove={handleRemoveLibraryEntry}
+            watchlist={watchlist}
+            onRemoveFromWatchlist={handleRemoveFromWatchlist}
+            onMoveWatchlistToSeen={handleMoveWatchlistToSeen}
+          />
         ) : (
           <div className="space-y-5">
             <FilterPanel filters={filters} onChange={setFilters} genreCatalog={genreCatalog} />
@@ -236,8 +299,10 @@ export default function App() {
                 title={result}
                 isSeen={isSeen(result.id, result.mediaType)}
                 isFavorite={isFavorite(result.id, result.mediaType)}
+                isInWatchlist={isInWatchlist(result.id, result.mediaType)}
                 onMarkSeen={handleMarkSeen}
                 onToggleFavorite={handleToggleFavorite}
+                onToggleWatchlist={handleToggleWatchlist}
                 onReroll={handleDraw}
               />
             )}

@@ -1,22 +1,26 @@
 import { useState } from 'react'
-import type { SeenEntry } from '../types'
+import type { SeenEntry, WatchlistEntry } from '../types'
 import { posterUrl } from '../lib/tmdb'
 
 interface Props {
   entries: SeenEntry[]
   onUpdate: (entry: SeenEntry) => void
   onRemove: (id: number, mediaType: string) => void
+  watchlist: WatchlistEntry[]
+  onRemoveFromWatchlist: (id: number, mediaType: string) => void
+  onMoveWatchlistToSeen: (entry: WatchlistEntry) => void
 }
 
-export default function Library({ entries, onUpdate, onRemove }: Props) {
-  const [filter, setFilter] = useState<'all' | 'favorites'>('all')
+type Filter = 'all' | 'favorites' | 'watchlist'
 
-  const visible = filter === 'favorites' ? entries.filter((e) => e.favorite) : entries
+export default function Library({ entries, onUpdate, onRemove, watchlist, onRemoveFromWatchlist, onMoveWatchlistToSeen }: Props) {
+  const [filter, setFilter] = useState<Filter>('all')
 
-  if (entries.length === 0) {
+  if (entries.length === 0 && watchlist.length === 0) {
     return (
       <div className="rounded-lg border border-cream/10 bg-panel p-8 text-center text-sand">
-        Rien à afficher pour l'instant. Marque un film ou une série comme "vu" pour le retrouver ici.
+        Rien à afficher pour l'instant. Marque un film ou une série comme "vu", ou ajoute-le à "à voir plus tard", pour le
+        retrouver ici.
       </div>
     )
   }
@@ -36,13 +40,38 @@ export default function Library({ entries, onUpdate, onRemove }: Props) {
         >
           Favoris ({entries.filter((e) => e.favorite).length})
         </button>
+        <button
+          onClick={() => setFilter('watchlist')}
+          className={`rounded-full px-3 py-1 text-sm ${filter === 'watchlist' ? 'bg-gold text-night' : 'bg-panel-2 text-sand'}`}
+        >
+          À voir ({watchlist.length})
+        </button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {visible.map((entry) => (
-          <LibraryRow key={`${entry.mediaType}-${entry.id}`} entry={entry} onUpdate={onUpdate} onRemove={onRemove} />
-        ))}
-      </div>
+      {filter === 'watchlist' ? (
+        watchlist.length === 0 ? (
+          <p className="text-sm text-sand">
+            Rien dans ta liste "à voir plus tard". Ajoute un résultat de tirage avec le bouton "+ À voir plus tard".
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {watchlist.map((entry) => (
+              <WatchlistRow
+                key={`${entry.mediaType}-${entry.id}`}
+                entry={entry}
+                onRemove={onRemoveFromWatchlist}
+                onMarkSeen={onMoveWatchlistToSeen}
+              />
+            ))}
+          </div>
+        )
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(filter === 'favorites' ? entries.filter((e) => e.favorite) : entries).map((entry) => (
+            <LibraryRow key={`${entry.mediaType}-${entry.id}`} entry={entry} onUpdate={onUpdate} onRemove={onRemove} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -92,6 +121,47 @@ function LibraryRow({ entry, onUpdate, onRemove }: { entry: SeenEntry; onUpdate:
           rows={2}
           className="mt-1 w-full resize-none rounded-md border border-cream/10 bg-panel-2 px-2 py-1 text-xs text-cream outline-none focus:border-gold"
         />
+      </div>
+    </div>
+  )
+}
+
+function WatchlistRow({
+  entry,
+  onRemove,
+  onMarkSeen,
+}: {
+  entry: WatchlistEntry
+  onRemove: (id: number, mediaType: string) => void
+  onMarkSeen: (entry: WatchlistEntry) => void
+}) {
+  const poster = posterUrl(entry.posterPath, 'w185')
+
+  return (
+    <div className="flex gap-3 rounded-lg border border-cream/10 bg-panel p-3">
+      {poster ? (
+        <img src={poster} alt={entry.title} className="h-24 w-16 shrink-0 rounded-sm object-cover" />
+      ) : (
+        <div className="h-24 w-16 shrink-0 rounded-sm bg-panel-2" />
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-display text-sm uppercase tracking-wide text-cream">
+          {entry.title} <span className="text-sand">({entry.year})</span>
+        </p>
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={() => onMarkSeen(entry)}
+            className="rounded-md bg-gold px-2 py-1 text-xs font-bold uppercase tracking-wide text-night hover:bg-gold/90"
+          >
+            ✓ Vu
+          </button>
+          <button
+            onClick={() => onRemove(entry.id, entry.mediaType)}
+            className="rounded-md bg-panel-2 px-2 py-1 text-xs text-sand hover:text-burgundy"
+          >
+            retirer
+          </button>
+        </div>
       </div>
     </div>
   )

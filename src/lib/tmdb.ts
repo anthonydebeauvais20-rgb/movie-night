@@ -239,6 +239,24 @@ export async function pickRandomFromPerson(
   return { item: picked, mediaType: picked.media_type }
 }
 
+interface VideoItem {
+  type: string
+  site: string
+  official: boolean
+  key: string
+}
+
+function pickTrailerKey(videos: VideoItem[]): string | null {
+  const youtube = videos.filter((v) => v.site === 'YouTube')
+  return (
+    youtube.find((v) => v.type === 'Trailer' && v.official)?.key ??
+    youtube.find((v) => v.type === 'Trailer')?.key ??
+    youtube.find((v) => v.type === 'Teaser' && v.official)?.key ??
+    youtube[0]?.key ??
+    null
+  )
+}
+
 export async function fetchDetails(mediaType: MediaType, id: number): Promise<DetailedTitle> {
   const region = getRegion()
 
@@ -256,10 +274,18 @@ export async function fetchDetails(mediaType: MediaType, id: number): Promise<De
     runtime?: number
     number_of_seasons?: number
     credits: { cast: CastMember[] }
+    videos: { results: VideoItem[] }
     'watch/providers': { results: Record<string, { flatrate?: WatchProvider[]; free?: WatchProvider[]; ads?: WatchProvider[] }> }
-  }>(`/${mediaType}/${id}`, { append_to_response: 'credits,watch/providers' })
+  }>(`/${mediaType}/${id}`, { append_to_response: 'credits,videos,watch/providers' })
 
   const regionProviders = details['watch/providers']?.results?.[region]
+
+  let trailerKey = pickTrailerKey(details.videos?.results ?? [])
+  if (!trailerKey) {
+    // Many titles have no French-language video entries; fall back to the default (English) catalog.
+    const fallback = await tmdbFetch<{ results: VideoItem[] }>(`/${mediaType}/${id}/videos`, { language: 'en-US' })
+    trailerKey = pickTrailerKey(fallback.results)
+  }
 
   return {
     id,
@@ -274,6 +300,7 @@ export async function fetchDetails(mediaType: MediaType, id: number): Promise<De
     cast: (details.credits?.cast ?? []).slice(0, 5),
     runtimeMinutes: details.runtime ?? null,
     numberOfSeasons: details.number_of_seasons ?? null,
+    trailerKey,
     providers: {
       flatrate: regionProviders?.flatrate ?? [],
       free: regionProviders?.free ?? [],

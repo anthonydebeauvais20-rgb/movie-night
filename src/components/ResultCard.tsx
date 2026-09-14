@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { DetailedTitle } from '../types'
 import { posterUrl, providerLogoUrl } from '../lib/tmdb'
 
@@ -5,16 +6,52 @@ interface Props {
   title: DetailedTitle
   isSeen: boolean
   isFavorite: boolean
+  isInWatchlist: boolean
   onMarkSeen: () => void
   onToggleFavorite: () => void
+  onToggleWatchlist: () => void
   onReroll: () => void
 }
 
-export default function ResultCard({ title, isSeen, isFavorite, onMarkSeen, onToggleFavorite, onReroll }: Props) {
+export default function ResultCard({
+  title,
+  isSeen,
+  isFavorite,
+  isInWatchlist,
+  onMarkSeen,
+  onToggleFavorite,
+  onToggleWatchlist,
+  onReroll,
+}: Props) {
+  const [showTrailer, setShowTrailer] = useState(false)
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle')
+
   const poster = posterUrl(title.posterPath)
   const allProviders = [...title.providers.flatrate, ...title.providers.free, ...title.providers.ads]
   const overviewShort =
     title.overview.length > 220 ? title.overview.slice(0, 220).trim() + '…' : title.overview || 'Pas de synopsis disponible.'
+
+  async function handleShare() {
+    const tmdbUrl = `https://www.themoviedb.org/${title.mediaType}/${title.id}`
+    const text = `On regarde "${title.title}" (${title.year}) ce soir ? 🎬`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: title.title, text, url: tmdbUrl })
+      } catch {
+        // User cancelled the share sheet — nothing to do.
+      }
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${text} ${tmdbUrl}`)
+      setShareStatus('copied')
+      setTimeout(() => setShareStatus('idle'), 2000)
+    } catch {
+      // Clipboard unavailable — silently ignore, nothing actionable for the user here.
+    }
+  }
 
   return (
     <div className="overflow-hidden rounded-lg border border-cream/10 bg-panel">
@@ -69,6 +106,29 @@ export default function ResultCard({ title, isSeen, isFavorite, onMarkSeen, onTo
 
           <p className="mt-2 text-sm leading-snug text-cream/80">{overviewShort}</p>
 
+          {title.trailerKey && (
+            <div className="mt-3">
+              {showTrailer ? (
+                <div className="aspect-video w-full overflow-hidden rounded-md">
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${title.trailerKey}?autoplay=1`}
+                    title={`Bande-annonce de ${title.title}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="h-full w-full"
+                  />
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowTrailer(true)}
+                  className="rounded-md border border-gold/30 bg-gold/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-gold transition hover:bg-gold/20"
+                >
+                  ▶ Bande-annonce
+                </button>
+              )}
+            </div>
+          )}
+
           {allProviders.length > 0 ? (
             <div className="mt-3 flex items-center gap-2">
               <span className="text-xs text-sand/70">Voir sur :</span>
@@ -88,7 +148,7 @@ export default function ResultCard({ title, isSeen, isFavorite, onMarkSeen, onTo
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-t border-cream/10 bg-night/40 p-4">
+      <div className="flex flex-wrap items-center gap-2 border-t border-cream/10 bg-night/40 p-4">
         <button
           onClick={onMarkSeen}
           className="rounded-md bg-gold px-4 py-2 font-display text-sm font-bold uppercase tracking-wide text-night transition hover:bg-gold/90"
@@ -102,6 +162,20 @@ export default function ResultCard({ title, isSeen, isFavorite, onMarkSeen, onTo
           }`}
         >
           {isFavorite ? '♥ Favori' : '♡ Ajouter aux favoris'}
+        </button>
+        <button
+          onClick={onToggleWatchlist}
+          className={`rounded-md px-4 py-2 font-display text-sm font-bold uppercase tracking-wide transition ${
+            isInWatchlist ? 'bg-panel-2 text-gold' : 'bg-panel-2 text-sand hover:text-cream'
+          }`}
+        >
+          {isInWatchlist ? '🔖 Dans "à voir"' : '+ À voir plus tard'}
+        </button>
+        <button
+          onClick={handleShare}
+          className="rounded-md bg-panel-2 px-4 py-2 font-display text-sm font-bold uppercase tracking-wide text-sand transition hover:text-cream"
+        >
+          {shareStatus === 'copied' ? 'Copié !' : '↗ Partager'}
         </button>
         <button
           onClick={onReroll}

@@ -45,6 +45,7 @@ export interface DetailedTitle {
   cast: CastMember[]
   runtimeMinutes: number | null
   numberOfSeasons: number | null
+  trailerKey: string | null
   providers: {
     flatrate: WatchProvider[]
     free: WatchProvider[]
@@ -80,4 +81,13 @@ export interface SeenEntry {
   rating: number | null
   comment: string
   favorite: boolean
+}
+
+export interface WatchlistEntry {
+  id: number
+  mediaType: MediaType
+  title: string
+  posterPath: string | null
+  year: string
+  dateAdded: string
 }
