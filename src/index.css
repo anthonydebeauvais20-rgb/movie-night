@@ -1,16 +1,81 @@
 @import "tailwindcss";
 
-@theme {
-  --color-night: #100d12;
-  --color-panel: #1b1620;
-  --color-panel-2: #241d28;
-  --color-gold: #e7b44c;
-  --color-burgundy: #8c2f39;
-  --color-cream: #f3ecdf;
-  --color-sand: #b7a98f;
+@theme inline {
+  --color-paper: var(--paper);
+  --color-tint: var(--tint);
+  --color-ink: var(--ink);
+  --color-fluo: var(--fluo);
+  --color-over: var(--over);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-on-ink: var(--on-ink);
+  --color-on-fluo: var(--on-fluo);
 
-  --font-display: "Big Shoulders Display", sans-serif;
-  --font-body: "Literata", serif;
+  --font-display: "Anybody", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Chivo", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Light theme: blue and fluo-pink inks printed on paper. */
+:root {
+  color-scheme: light;
+  --paper: #fafaf7;
+  --tint: #e4e8f5;
+  --ink: #2b4ba8;
+  --fluo: #ff4fa3;
+  --over: #6b3a9c;
+  --fg: #2b4ba8;
+  --muted: #5a6fb5;
+  --on-ink: #fafaf7;
+  --on-fluo: #171b3a;
+  --blend: multiply;
+  --logo-1: var(--ink);
+  --logo-2: var(--over);
+  --logo-3: var(--fluo);
+}
+
+/* Dark theme: light inks on night-blue paper, so overprints lighten instead of darken. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #171b3a;
+    --tint: #252c5a;
+    --ink: #7f98ff;
+    --fluo: #ff5fae;
+    --over: #c9a8ff;
+    --fg: #f2f3f8;
+    --muted: #a9b3e0;
+    --on-ink: #171b3a;
+    --on-fluo: #171b3a;
+    --blend: screen;
+    --logo-2: var(--fg);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #171b3a;
+  --tint: #252c5a;
+  --ink: #7f98ff;
+  --fluo: #ff5fae;
+  --over: #c9a8ff;
+  --fg: #f2f3f8;
+  --muted: #a9b3e0;
+  --on-ink: #171b3a;
+  --on-fluo: #171b3a;
+  --blend: screen;
+  --logo-2: var(--fg);
+}
+
+@utility font-wide {
+  font-family: var(--font-display);
+  font-stretch: 125%;
+}
+
+@utility font-poster {
+  font-family: var(--font-display);
+  font-stretch: 140%;
+  font-style: italic;
+  font-weight: 900;
 }
 
 html,
@@ -20,24 +85,72 @@ body,
 }
 
 body {
-  background-color: var(--color-night);
-  background-image: radial-gradient(circle at 85% -10%, rgb(231 180 76 / 8%), transparent 55%);
-  background-repeat: no-repeat;
-  color: var(--color-cream);
+  background-color: var(--paper);
+  color: var(--fg);
   font-family: var(--font-body);
 }
 
-/* Text fields signal focus with their gold border; everything else gets a ring. */
+/* Text fields signal focus with their own border; everything else gets a ring. */
 button:focus-visible,
 summary:focus-visible,
 a:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline: 2px solid var(--fluo);
   outline-offset: 2px;
+}
+
+/* Cassette spines, printed with the two inks only. */
+.spine-ink { background: var(--ink); color: var(--on-ink); }
+.spine-fluo { background: var(--fluo); color: var(--on-fluo); }
+.spine-over { background: var(--over); color: var(--on-ink); }
+.spine-tint { background: var(--tint); color: var(--fg); }
+.spine-outline { background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--ink); color: var(--fg); }
+
+.spine-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: calc(100% - 12px);
+}
+
+.spine-lift {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* On a new draw, the pink ink lands off-register then snaps onto the title and disappears. */
+.calage-ink {
+  position: absolute;
+  inset: 0;
+  color: var(--fluo);
+  mix-blend-mode: var(--blend);
+  opacity: 0;
+  pointer-events: none;
+  animation: calage 0.27s steps(1, end) 0.12s both;
+}
+
+@keyframes calage {
+  0% { transform: translate(10px, -6px); opacity: 1; }
+  33% { transform: translate(5px, -3px); opacity: 1; }
+  66% { transform: translate(1px, -1px); opacity: 1; }
+  100% { transform: translate(0, 0); opacity: 0; }
+}
+
+.jaquette-in {
+  animation: jaquette-in 0.22s ease-out both;
+}
+
+@keyframes jaquette-in {
+  from { opacity: 0; transform: translateY(-10px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
+  }
+  .calage-ink,
+  .jaquette-in {
+    animation: none;
   }
 }

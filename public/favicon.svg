@@ -1,16 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <circle cx="32" cy="32" r="30" fill="#8c2f39"/>
-  <mask id="ticketTirageMask">
-    <rect width="64" height="64" fill="black"/>
-    <rect x="8" y="16" width="48" height="32" rx="6" fill="white"/>
-    <circle cx="8" cy="32" r="6" fill="black"/>
-    <circle cx="56" cy="32" r="6" fill="black"/>
-    <circle cx="32" cy="24" r="2.3" fill="black"/>
-    <circle cx="46" cy="24" r="2.3" fill="black"/>
-    <circle cx="39" cy="32" r="2.3" fill="black"/>
-    <circle cx="32" cy="40" r="2.3" fill="black"/>
-    <circle cx="46" cy="40" r="2.3" fill="black"/>
-  </mask>
-  <g mask="url(#ticketTirageMask)"><rect width="64" height="64" fill="#e7b44c"/></g>
-  <line x1="22" y1="16" x2="22" y2="48" stroke="#100d12" stroke-width="2" stroke-dasharray="3 3"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><rect width="64" height="64" rx="13" fill="#171b3a"/><g transform="translate(6.28 19.75) scale(0.245)"><path transform="translate(0 0)" fill="#7f98ff" d="M0 100V0H24L55 62L86 0H110V100H88V42L62 96H48L22 42V100Z"/></g><g transform="translate(35.19 19.75) scale(0.245)"><path transform="translate(0 0)" fill="#ff5fae" d="M0 100V0H22L70 64V0H92V100H70L22 36V100Z"/></g></svg>

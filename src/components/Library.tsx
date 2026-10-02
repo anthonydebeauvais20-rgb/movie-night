@@ -1,7 +1,10 @@
 import { useState } from 'react'
-import type { SeenEntry, WatchlistEntry } from '../types'
+import type { ReactNode } from 'react'
+import type { MediaType, SeenEntry, WatchlistEntry } from '../types'
 import { posterUrl } from '../lib/tmdb'
 import type { TitleSearchResult } from '../lib/tmdb'
+import { spineHeightFor, spineStyleFor } from '../lib/spines'
+import { chipClass, primaryButtonClass, secondaryButtonClass } from '../lib/ui'
 import AddSeenSearch from './AddSeenSearch'
 
 interface Props {
@@ -16,6 +19,17 @@ interface Props {
 
 type Filter = 'all' | 'favorites' | 'watchlist'
 
+const keyOf = (e: { id: number; mediaType: MediaType }) => `${e.mediaType}-${e.id}`
+
+// Every shelf row is the same height so one repeating gradient can draw a full-width plank under each row.
+const ROW = 180
+const PLANK = 5
+const ROW_GAP = 28
+const shelfRowsStyle = {
+  rowGap: ROW_GAP,
+  backgroundImage: `repeating-linear-gradient(to bottom, transparent 0 ${ROW - PLANK}px, var(--color-ink) ${ROW - PLANK}px ${ROW}px, transparent ${ROW}px ${ROW + ROW_GAP}px)`,
+}
+
 export default function Library({
   entries,
   onUpdate,
@@ -26,123 +40,197 @@ export default function Library({
   onMoveWatchlistToSeen,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('all')
-  const seenKeys = new Set(entries.map((e) => `${e.mediaType}-${e.id}`))
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const seenKeys = new Set(entries.map(keyOf))
 
-  if (entries.length === 0 && watchlist.length === 0) {
-    return (
-      <div>
-        <AddSeenSearch seenKeys={seenKeys} onAdd={onAddSeen} />
-        <div className="rounded-lg border border-cream/10 bg-panel p-8 text-center text-sand">
-          Rien à afficher pour l'instant. Ajoute ci-dessus un titre que tu as déjà vu, marque un résultat de tirage comme
-          "vu", ou mets-le dans "à voir plus tard".
-        </div>
-      </div>
-    )
+  const shown: (SeenEntry | WatchlistEntry)[] =
+    filter === 'watchlist' ? watchlist : filter === 'favorites' ? entries.filter((e) => e.favorite) : entries
+  const selectedSeen = filter === 'watchlist' ? undefined : entries.find((e) => keyOf(e) === selectedKey)
+  const selectedWatch = filter === 'watchlist' ? watchlist.find((e) => keyOf(e) === selectedKey) : undefined
+
+  function changeFilter(next: Filter) {
+    setFilter(next)
+    setSelectedKey(null)
   }
 
+  const emptyMessage =
+    filter === 'watchlist'
+      ? 'Rien dans ta liste « À voir ». Ajoute un résultat de tirage avec le bouton « À voir plus tard ».'
+      : filter === 'favorites'
+        ? 'Aucun favori pour l’instant. Ouvre une cassette et ajoute-la à tes favoris.'
+        : 'Ton étagère est vide. Ajoute ci-dessus un titre que tu as déjà vu, ou marque un résultat de tirage comme vu.'
+
   return (
-    <div>
+    <div className="space-y-6">
       <AddSeenSearch seenKeys={seenKeys} onAdd={onAddSeen} />
-      <div className="mb-4 flex gap-2">
-        <button
-          onClick={() => setFilter('all')}
-          className={`rounded-full px-3 py-1 text-sm ${filter === 'all' ? 'bg-gold text-night' : 'bg-panel-2 text-sand'}`}
-        >
-          Tout ({entries.length})
+
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => changeFilter('all')} className={chipClass(filter === 'all')}>
+          Vus ({entries.length})
         </button>
-        <button
-          onClick={() => setFilter('favorites')}
-          className={`rounded-full px-3 py-1 text-sm ${filter === 'favorites' ? 'bg-gold text-night' : 'bg-panel-2 text-sand'}`}
-        >
+        <button onClick={() => changeFilter('favorites')} className={chipClass(filter === 'favorites')}>
           Favoris ({entries.filter((e) => e.favorite).length})
         </button>
-        <button
-          onClick={() => setFilter('watchlist')}
-          className={`rounded-full px-3 py-1 text-sm ${filter === 'watchlist' ? 'bg-gold text-night' : 'bg-panel-2 text-sand'}`}
-        >
+        <button onClick={() => changeFilter('watchlist')} className={chipClass(filter === 'watchlist')}>
           À voir ({watchlist.length})
         </button>
       </div>
 
-      {filter === 'watchlist' ? (
-        watchlist.length === 0 ? (
-          <p className="text-sm text-sand">
-            Rien dans ta liste "à voir plus tard". Ajoute un résultat de tirage avec le bouton "+ À voir plus tard".
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {watchlist.map((entry) => (
-              <WatchlistRow
-                key={`${entry.mediaType}-${entry.id}`}
-                entry={entry}
-                onRemove={onRemoveFromWatchlist}
-                onMarkSeen={onMoveWatchlistToSeen}
-              />
-            ))}
-          </div>
-        )
+      {shown.length === 0 ? (
+        <p className="rounded-sm border-[1.5px] border-dashed border-ink/60 px-4 py-6 text-center text-sm text-muted">
+          {emptyMessage}
+        </p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {(filter === 'favorites' ? entries.filter((e) => e.favorite) : entries).map((entry) => (
-            <LibraryRow key={`${entry.mediaType}-${entry.id}`} entry={entry} onUpdate={onUpdate} onRemove={onRemove} />
-          ))}
-        </div>
+        <>
+          <div className="flex flex-wrap gap-x-[3px]" style={shelfRowsStyle}>
+            {shown.map((entry) => {
+              const key = keyOf(entry)
+              const isSelected = key === selectedKey
+              const isFavorite = 'favorite' in entry && entry.favorite
+              return (
+                <div key={key} className="flex items-end" style={{ height: ROW, paddingBottom: PLANK }}>
+                  <button
+                    onClick={() => setSelectedKey(isSelected ? null : key)}
+                    aria-pressed={isSelected}
+                    aria-label={`${entry.title}${entry.year ? ` (${entry.year})` : ''}`}
+                    title={entry.title}
+                    className={`spine-${spineStyleFor(entry.id)} spine-lift relative flex w-[34px] items-center justify-center rounded-t-[2px] ${
+                      isSelected ? '-translate-y-3' : 'hover:-translate-y-1'
+                    }`}
+                    style={{ height: spineHeightFor(entry.id) }}
+                  >
+                    {isFavorite && (
+                      <span className="absolute top-1.5 h-2.5 w-2.5 rounded-full bg-fluo ring-2 ring-paper" aria-hidden="true" />
+                    )}
+                    <span className="spine-label font-poster text-xs">{entry.title}</span>
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+
+          {selectedSeen ? (
+            <SeenDetail
+              key={keyOf(selectedSeen)}
+              entry={selectedSeen}
+              onUpdate={onUpdate}
+              onRemove={(id, mediaType) => {
+                onRemove(id, mediaType)
+                setSelectedKey(null)
+              }}
+            />
+          ) : selectedWatch ? (
+            <WatchlistDetail
+              key={keyOf(selectedWatch)}
+              entry={selectedWatch}
+              onMarkSeen={(entry) => {
+                onMoveWatchlistToSeen(entry)
+                setSelectedKey(null)
+              }}
+              onRemove={(id, mediaType) => {
+                onRemoveFromWatchlist(id, mediaType)
+                setSelectedKey(null)
+              }}
+            />
+          ) : (
+            <p className="text-sm text-muted">Touche une cassette pour la sortir du rayon.</p>
+          )}
+        </>
       )}
     </div>
   )
 }
 
-function LibraryRow({ entry, onUpdate, onRemove }: { entry: SeenEntry; onUpdate: (e: SeenEntry) => void; onRemove: (id: number, mediaType: string) => void }) {
+function DetailFrame({
+  entry,
+  children,
+}: {
+  entry: SeenEntry | WatchlistEntry
+  children: ReactNode
+}) {
   const poster = posterUrl(entry.posterPath, 'w185')
-
   return (
-    <div className="flex gap-3 rounded-lg border border-cream/10 bg-panel p-3">
-      {poster ? (
-        <img src={poster} alt={entry.title} className="h-24 w-16 shrink-0 rounded-sm object-cover" />
-      ) : (
-        <div className="h-24 w-16 shrink-0 rounded-sm bg-panel-2" />
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="truncate font-display text-sm uppercase tracking-wide text-cream">
-            {entry.title} <span className="text-sand">({entry.year})</span>
+    <article className="jaquette-in grid grid-cols-[1.75rem_minmax(0,1fr)] overflow-hidden rounded-sm border-[1.5px] border-ink bg-paper">
+      <div className={`spine-${spineStyleFor(entry.id)}`} aria-hidden="true" />
+      <div className="flex gap-4 p-4">
+        {poster ? (
+          <img
+            src={poster}
+            alt={`Affiche de ${entry.title}`}
+            className="h-36 w-24 shrink-0 object-cover shadow-[0_0_0_1px_var(--color-ink)]"
+          />
+        ) : (
+          <div className="h-36 w-24 shrink-0 bg-tint shadow-[inset_0_0_0_1px_var(--color-ink)]" />
+        )}
+        <div className="min-w-0 flex-1">
+          <h3 className="font-poster text-xl leading-tight text-fg [text-wrap:balance]">{entry.title}</h3>
+          <p className="mt-1 text-sm text-muted">
+            {entry.mediaType === 'movie' ? 'Film' : 'Série'}
+            {entry.year ? `, ${entry.year}` : ''}
           </p>
-          <button onClick={() => onRemove(entry.id, entry.mediaType)} className="shrink-0 text-xs text-sand/60 hover:text-burgundy">
-            retirer
-          </button>
+          <div className="mt-3">{children}</div>
         </div>
+      </div>
+    </article>
+  )
+}
 
-        <div className="mt-1 flex gap-0.5">
+function SeenDetail({
+  entry,
+  onUpdate,
+  onRemove,
+}: {
+  entry: SeenEntry
+  onUpdate: (e: SeenEntry) => void
+  onRemove: (id: number, mediaType: string) => void
+}) {
+  return (
+    <DetailFrame entry={entry}>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex" role="group" aria-label="Ta note">
           {[1, 2, 3, 4, 5].map((n) => (
             <button
               key={n}
               onClick={() => onUpdate({ ...entry, rating: entry.rating === n ? null : n })}
-              className={`text-sm ${entry.rating && n <= entry.rating ? 'text-gold' : 'text-sand/25'}`}
+              aria-label={`${n} sur 5`}
+              aria-pressed={entry.rating === n}
+              className={`px-0.5 text-xl leading-none ${entry.rating && n <= entry.rating ? 'text-ink' : 'text-ink/25'}`}
             >
               ★
             </button>
           ))}
-          <button
-            onClick={() => onUpdate({ ...entry, favorite: !entry.favorite })}
-            className={`ml-1 text-sm ${entry.favorite ? 'text-burgundy' : 'text-sand/25'}`}
-          >
-            ♥
-          </button>
         </div>
+        <button
+          onClick={() => onUpdate({ ...entry, favorite: !entry.favorite })}
+          aria-pressed={entry.favorite}
+          className={secondaryButtonClass}
+        >
+          {entry.favorite ? 'Favori' : 'Ajouter aux favoris'}
+        </button>
+      </div>
 
+      <label className="mt-3 block text-sm font-semibold text-fg">
+        Ton avis
         <textarea
           value={entry.comment}
           onChange={(e) => onUpdate({ ...entry, comment: e.target.value })}
-          placeholder="Ton avis (optionnel)…"
+          placeholder="Optionnel"
           rows={2}
-          className="mt-1 w-full resize-none rounded-md border border-cream/10 bg-panel-2 px-2 py-1 text-xs text-cream outline-none focus:border-gold"
+          className="mt-1 w-full resize-none rounded-sm border-[1.5px] border-ink/40 bg-paper px-2 py-1.5 text-sm font-normal text-fg outline-none placeholder:text-muted/70 focus:border-ink"
         />
-      </div>
-    </div>
+      </label>
+
+      <button
+        onClick={() => onRemove(entry.id, entry.mediaType)}
+        className="mt-2 text-xs text-muted underline underline-offset-4 hover:text-fg"
+      >
+        Retirer de la bibliothèque
+      </button>
+    </DetailFrame>
   )
 }
 
-function WatchlistRow({
+function WatchlistDetail({
   entry,
   onRemove,
   onMarkSeen,
@@ -151,34 +239,19 @@ function WatchlistRow({
   onRemove: (id: number, mediaType: string) => void
   onMarkSeen: (entry: WatchlistEntry) => void
 }) {
-  const poster = posterUrl(entry.posterPath, 'w185')
-
   return (
-    <div className="flex gap-3 rounded-lg border border-cream/10 bg-panel p-3">
-      {poster ? (
-        <img src={poster} alt={entry.title} className="h-24 w-16 shrink-0 rounded-sm object-cover" />
-      ) : (
-        <div className="h-24 w-16 shrink-0 rounded-sm bg-panel-2" />
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-sm uppercase tracking-wide text-cream">
-          {entry.title} <span className="text-sand">({entry.year})</span>
-        </p>
-        <div className="mt-2 flex gap-2">
-          <button
-            onClick={() => onMarkSeen(entry)}
-            className="rounded-md bg-gold px-2 py-1 text-xs font-bold uppercase tracking-wide text-night hover:bg-gold/90"
-          >
-            ✓ Vu
-          </button>
-          <button
-            onClick={() => onRemove(entry.id, entry.mediaType)}
-            className="rounded-md bg-panel-2 px-2 py-1 text-xs text-sand hover:text-burgundy"
-          >
-            retirer
-          </button>
-        </div>
+    <DetailFrame entry={entry}>
+      <div className="flex flex-wrap items-center gap-3">
+        <button onClick={() => onMarkSeen(entry)} className={primaryButtonClass}>
+          Marquer comme vu
+        </button>
+        <button
+          onClick={() => onRemove(entry.id, entry.mediaType)}
+          className="text-sm text-muted underline underline-offset-4 hover:text-fg"
+        >
+          Retirer de la liste
+        </button>
       </div>
-    </div>
+    </DetailFrame>
   )
 }

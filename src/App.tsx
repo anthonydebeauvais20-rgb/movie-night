@@ -3,6 +3,8 @@ import FilterPanel from './components/FilterPanel'
 import Library from './components/Library'
 import ResultCard from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
+import Shelf from './components/Shelf'
+import Wordmark from './components/Wordmark'
 import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError } from './lib/tmdb'
 import type { TitleSearchResult } from './lib/tmdb'
 import {
@@ -67,6 +69,7 @@ export default function App() {
   }
 
   const excludeIds = useMemo(() => new Set(seenList.map((e) => e.id)), [seenList])
+  const shelfLabels = useMemo(() => [...watchlist, ...seenList].map((e) => e.title), [watchlist, seenList])
 
   async function handleDraw() {
     setLoading(true)
@@ -225,30 +228,12 @@ export default function App() {
 
   return (
     <div className="min-h-full">
-      <header className="border-b border-cream/10 bg-panel/60">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-          <h1 className="flex items-center gap-2 font-display text-xl font-extrabold uppercase tracking-wide text-gold">
-            <svg viewBox="0 0 64 64" className="h-7 w-7 shrink-0" aria-hidden="true">
-              <circle cx="32" cy="32" r="30" fill="#8c2f39" />
-              <mask id="header-logo-mask">
-                <rect width="64" height="64" fill="black" />
-                <rect x="8" y="16" width="48" height="32" rx="6" fill="white" />
-                <circle cx="8" cy="32" r="6" fill="black" />
-                <circle cx="56" cy="32" r="6" fill="black" />
-                <circle cx="32" cy="24" r="2.3" fill="black" />
-                <circle cx="46" cy="24" r="2.3" fill="black" />
-                <circle cx="39" cy="32" r="2.3" fill="black" />
-                <circle cx="32" cy="40" r="2.3" fill="black" />
-                <circle cx="46" cy="40" r="2.3" fill="black" />
-              </mask>
-              <g mask="url(#header-logo-mask)">
-                <rect width="64" height="64" fill="#e7b44c" />
-              </g>
-              <line x1="22" y1="16" x2="22" y2="48" stroke="#100d12" strokeWidth="2" strokeDasharray="3 3" />
-            </svg>
-            Movie Night
+      <header className="border-b-2 border-ink">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4">
+          <h1>
+            <Wordmark className="h-[18px] w-auto sm:h-5" />
           </h1>
-          <nav className="flex gap-1 rounded-full bg-panel-2 p-1">
+          <nav className="flex gap-4 text-sm">
             {(
               [
                 ['tirage', 'Tirage'],
@@ -259,8 +244,11 @@ export default function App() {
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`rounded-full px-3 py-1.5 font-display text-sm uppercase tracking-wide transition ${
-                  tab === id ? 'bg-gold text-night' : 'text-sand hover:text-cream'
+                aria-current={tab === id ? 'page' : undefined}
+                className={`py-1 transition ${
+                  tab === id
+                    ? 'font-semibold text-fg underline decoration-fluo decoration-[3px] underline-offset-[7px]'
+                    : 'text-muted hover:text-fg'
                 }`}
               >
                 {label}
@@ -301,15 +289,24 @@ export default function App() {
           <div className="space-y-5">
             <FilterPanel filters={filters} onChange={setFilters} />
 
-            <button
-              onClick={handleDraw}
-              disabled={loading}
-              className="w-full rounded-lg bg-gold py-3 font-display text-base font-bold uppercase tracking-wide text-night shadow-lg shadow-gold/10 transition hover:bg-gold/90 disabled:opacity-50"
-            >
-              {loading ? 'Tirage en cours…' : '🎲 Trouver un film / une série'}
-            </button>
+            <div>
+              <Shelf
+                labels={shelfLabels}
+                loading={loading}
+                picked={result ? { id: result.id, title: result.title } : null}
+              />
+              <button
+                onClick={handleDraw}
+                disabled={loading}
+                className="mt-4 w-full bg-ink py-3.5 font-poster text-lg text-on-ink shadow-[4px_4px_0_var(--color-fluo)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_var(--color-fluo)] disabled:translate-x-0.5 disabled:translate-y-0.5 disabled:shadow-[2px_2px_0_var(--color-fluo)]"
+              >
+                {loading ? 'Tirage en cours…' : 'Tirer au sort'}
+              </button>
+            </div>
 
-            {error && <p className="rounded-lg border border-burgundy/40 bg-burgundy/15 p-3 text-sm text-cream">{error}</p>}
+            {error && (
+              <p className="rounded-sm border-[1.5px] border-dashed border-ink bg-tint px-4 py-3 text-sm text-fg">{error}</p>
+            )}
 
             {result && (
               <ResultCard

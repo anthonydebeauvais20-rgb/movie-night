@@ -10,14 +10,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
+      includeAssets: ['favicon.ico', 'favicon.svg', 'app-icon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'Movie Night',
         short_name: 'Movie Night',
         description: 'Tirage aléatoire de films et séries pour la soirée.',
         lang: 'fr',
-        theme_color: '#100d12',
-        background_color: '#100d12',
+        theme_color: '#171b3a',
+        background_color: '#171b3a',
         display: 'standalone',
         start_url: '/',
         icons: [
@@ -25,7 +25,7 @@ export default defineConfig({
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
           { src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'app-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
       },
     }),

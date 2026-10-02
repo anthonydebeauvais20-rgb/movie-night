@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { posterUrl, searchTitles } from '../lib/tmdb'
 import type { TitleSearchResult } from '../lib/tmdb'
+import { inputClass, secondaryButtonClass } from '../lib/ui'
 
 interface Props {
   seenKeys: Set<string>
@@ -42,8 +43,8 @@ export default function AddSeenSearch({ seenKeys, onAdd }: Props) {
   }, [trimmed])
 
   return (
-    <div className="mb-5 rounded-lg border border-cream/10 bg-panel p-4">
-      <label htmlFor="add-seen-search" className="block font-display text-sm uppercase tracking-wide text-sand">
+    <div className="rounded-sm border-[1.5px] border-ink p-4">
+      <label htmlFor="add-seen-search" className="block font-wide text-base font-bold text-fg">
         Ajouter un titre déjà vu
       </label>
       <input
@@ -52,43 +53,40 @@ export default function AddSeenSearch({ seenKeys, onAdd }: Props) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Cherche un film ou une série par son titre…"
-        className="mt-2 w-full rounded-md border border-cream/10 bg-panel-2 px-3 py-2 text-cream outline-none placeholder:text-sand/50 focus:border-gold"
+        className={`${inputClass} mt-2`}
       />
 
-      {status === 'loading' && <p className="mt-2 text-xs text-sand/70">Recherche…</p>}
+      {status === 'loading' && <p className="mt-2 text-xs text-muted">Recherche…</p>}
       {status === 'error' && (
-        <p className="mt-2 text-xs text-cream">Recherche impossible pour le moment. Vérifie ta connexion et réessaie.</p>
+        <p className="mt-2 text-xs text-fg">Recherche impossible pour le moment. Vérifie ta connexion et réessaie.</p>
       )}
       {status === 'idle' && trimmed.length >= 2 && results.length === 0 && (
-        <p className="mt-2 text-xs text-sand/70">Aucun résultat pour "{trimmed}".</p>
+        <p className="mt-2 text-xs text-muted">Aucun résultat pour « {trimmed} ».</p>
       )}
 
       {results.length > 0 && (
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 divide-y divide-ink/20">
           {results.map((found) => {
             const poster = posterUrl(found.posterPath, 'w185')
             const alreadySeen = seenKeys.has(`${found.mediaType}-${found.id}`)
             return (
-              <li key={`${found.mediaType}-${found.id}`} className="flex items-center gap-3 rounded-md bg-panel-2 p-2">
+              <li key={`${found.mediaType}-${found.id}`} className="flex items-center gap-3 py-2">
                 {poster ? (
-                  <img src={poster} alt="" className="h-14 w-10 shrink-0 rounded-sm object-cover" />
+                  <img src={poster} alt="" className="h-14 w-10 shrink-0 object-cover shadow-[0_0_0_1px_var(--color-ink)]" />
                 ) : (
-                  <div className="h-14 w-10 shrink-0 rounded-sm bg-night/60" />
+                  <div className="h-14 w-10 shrink-0 bg-tint" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-sm uppercase tracking-wide text-cream">
-                    {found.title} {found.year && <span className="text-sand">({found.year})</span>}
+                  <p className="truncate text-sm font-semibold text-fg">
+                    {found.title} {found.year && <span className="font-normal text-muted">({found.year})</span>}
                   </p>
-                  <p className="text-xs text-sand">{found.mediaType === 'movie' ? 'Film' : 'Série'}</p>
+                  <p className="text-xs text-muted">{found.mediaType === 'movie' ? 'Film' : 'Série'}</p>
                 </div>
                 {alreadySeen ? (
-                  <span className="shrink-0 text-xs text-sand">✓ Dans ta liste</span>
+                  <span className="shrink-0 text-xs text-muted">Déjà sur l’étagère</span>
                 ) : (
-                  <button
-                    onClick={() => onAdd(found)}
-                    className="shrink-0 rounded-md bg-gold px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wide text-night transition hover:bg-gold/90"
-                  >
-                    ✓ Vu
+                  <button onClick={() => onAdd(found)} className={`${secondaryButtonClass} shrink-0 py-1.5`}>
+                    Vu
                   </button>
                 )}
               </li>

@@ -1,5 +1,6 @@
-import type { Filters, SeenEntry, WatchlistEntry } from '../types'
+import type { Filters, SeenEntry, ThemePreference, WatchlistEntry } from '../types'
 
+// The theme key is also read by the inline script in index.html, before the app loads.
 const KEYS = {
   apiKey: 'movienight:apiKey',
   region: 'movienight:region',
@@ -7,7 +8,18 @@ const KEYS = {
   filters: 'movienight:filters',
   myProviders: 'movienight:myProviders',
   watchlist: 'movienight:watchlist',
+  theme: 'movienight:theme',
 } as const
+
+export function getThemePreference(): ThemePreference {
+  const raw = localStorage.getItem(KEYS.theme)
+  return raw === 'light' || raw === 'dark' ? raw : 'system'
+}
+
+export function setThemePreference(theme: ThemePreference): void {
+  if (theme === 'system') localStorage.removeItem(KEYS.theme)
+  else localStorage.setItem(KEYS.theme, theme)
+}
 
 export function getApiKey(): string {
   return localStorage.getItem(KEYS.apiKey) ?? ''

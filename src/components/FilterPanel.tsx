@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { genreLabelsFor } from '../lib/tmdb'
+import { chipClass, inputClass } from '../lib/ui'
 import type { Filters, GenreMatch, Recency } from '../types'
 
 interface Props {
@@ -21,22 +22,16 @@ const MATCH_OPTIONS: [GenreMatch, string][] = [
   ['all', 'Tous à la fois'],
 ]
 
-const inputClass =
-  'mt-1 w-full rounded-md border border-cream/10 bg-panel-2 px-3 py-2 text-cream outline-none focus:border-gold'
-
-const chipClass = (active: boolean) =>
-  `rounded-full px-3 py-1 text-sm transition ${active ? 'bg-gold text-night' : 'bg-panel-2 text-sand hover:text-cream'}`
-
 // A collapsible row whose summary always shows what is currently applied, so closed filters stay readable.
 function Section({ title, summary, children }: { title: string; summary: ReactNode; children: ReactNode }) {
   return (
-    <details className="group border-t border-cream/10">
+    <details className="group border-t border-ink/25">
       <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3.5 [&::-webkit-details-marker]:hidden">
-        <span className="w-24 shrink-0 font-display text-lg font-semibold tracking-wide text-cream">{title}</span>
-        <span className="min-w-0 flex-1 truncate text-sm text-sand">{summary}</span>
+        <span className="min-w-28 shrink-0 whitespace-nowrap font-wide text-base font-bold text-fg">{title}</span>
+        <span className="min-w-0 flex-1 truncate text-sm text-muted">{summary}</span>
         <svg
           viewBox="0 0 12 12"
-          className="h-3 w-3 shrink-0 text-sand transition-transform group-open:rotate-180"
+          className="h-3 w-3 shrink-0 text-ink transition-transform group-open:rotate-180"
           fill="none"
           stroke="currentColor"
           strokeWidth="1.8"
@@ -80,7 +75,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
 
   const genreSummary = hasGenreSelection ? (
     <>
-      {filters.genreInclude.length > 0 && <span className="text-gold">{filters.genreInclude.join(', ')}</span>}
+      {filters.genreInclude.length > 0 && <span className="font-semibold text-fg">{filters.genreInclude.join(', ')}</span>}
       {filters.genreExclude.length > 0 && (
         <span className={filters.genreInclude.length > 0 ? 'ml-2' : ''}>sans {filters.genreExclude.join(', ')}</span>
       )}
@@ -105,8 +100,8 @@ export default function FilterPanel({ filters, onChange }: Props) {
       : 'toutes notes'
 
   return (
-    <div className="overflow-hidden rounded-lg border border-cream/10 bg-panel">
-      <div className="flex gap-2 p-5">
+    <div className="overflow-hidden rounded-sm border-[1.5px] border-ink bg-paper">
+      <div className="flex flex-wrap gap-2 p-5">
         {(['both', 'movie', 'tv'] as const).map((type) => (
           <button key={type} onClick={() => changeMediaType(type)} className={chipClass(filters.mediaType === type)}>
             {type === 'both' ? 'Films & séries' : type === 'movie' ? 'Films' : 'Séries'}
@@ -127,34 +122,34 @@ export default function FilterPanel({ filters, onChange }: Props) {
                 key={label}
                 onClick={() => cycleGenre(label)}
                 aria-label={`${label} : ${state}`}
-                className={`rounded-full px-3 py-1 text-xs transition ${
+                className={`rounded-full border px-3 py-1 text-xs transition ${
                   state === 'souhaité'
-                    ? 'bg-gold text-night'
+                    ? 'border-ink bg-ink text-on-ink shadow-[2px_2px_0_var(--color-fluo)]'
                     : state === 'exclu'
-                      ? 'bg-burgundy/30 text-cream line-through ring-1 ring-burgundy/60'
-                      : 'bg-panel-2 text-sand hover:text-cream'
+                      ? 'border-dashed border-ink text-muted line-through decoration-fluo decoration-2'
+                      : 'border-ink/40 text-fg hover:bg-tint'
                 }`}
               >
                 {state === 'souhaité' && '+ '}
-                {state === 'exclu' && '✕ '}
+                {state === 'exclu' && '− '}
                 {label}
               </button>
             )
           })}
         </div>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-sand/70">Touche un genre pour le souhaiter, touche encore pour l'exclure.</p>
+          <p className="text-xs text-muted">Touche un genre pour le souhaiter, touche encore pour l'exclure.</p>
           {hasGenreSelection && (
             <button
               onClick={() => onChange({ ...filters, genreInclude: [], genreExclude: [] })}
-              className="shrink-0 text-xs text-gold hover:text-cream"
+              className="shrink-0 text-xs font-semibold text-fg underline underline-offset-4 hover:text-muted"
             >
               Tout effacer
             </button>
           )}
         </div>
         {filters.genreInclude.length >= 2 && (
-          <div className="flex flex-wrap items-center gap-2 text-xs text-sand">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
             <span>Le film doit avoir :</span>
             {MATCH_OPTIONS.map(([value, label]) => (
               <button
@@ -169,18 +164,18 @@ export default function FilterPanel({ filters, onChange }: Props) {
         )}
       </Section>
 
-      <div className="border-t border-cream/10 px-5 py-4">
-        <label className="block text-sm text-sand">
+      <div className="border-t border-ink/25 px-5 py-4">
+        <label className="block text-sm font-semibold text-fg">
           Acteur ou réalisateur
           <input
             type="text"
             value={filters.personQuery}
             onChange={(e) => onChange({ ...filters, personQuery: e.target.value })}
             placeholder="Ex. Marion Cotillard, Bong Joon-ho…"
-            className={`${inputClass} placeholder:text-sand/50`}
+            className={`${inputClass} font-normal`}
           />
           {hasPersonQuery && (
-            <span className="mt-1 block text-xs text-sand/70">
+            <span className="mt-1 block text-xs font-normal text-muted">
               Cible toute la filmographie de cette personne. Les filtres plateformes (Réglages) et durée ne s'appliquent
               pas dans ce mode (non fournis par l'API pour une recherche par personne).
             </span>
@@ -197,13 +192,13 @@ export default function FilterPanel({ filters, onChange }: Props) {
           ))}
         </div>
         {isRecent && (
-          <p className="text-xs text-sand/70">
+          <p className="text-xs text-muted">
             Année et note minimum ignorées (les titres récents ont trop peu de votes). Pour les séries, seules les nouvelles
             séries sont proposées.
           </p>
         )}
         <div className={`grid grid-cols-2 gap-4 ${isRecent ? 'opacity-40' : ''}`}>
-          <label className="text-sm text-sand">
+          <label className="text-sm text-fg">
             Année min.
             <input
               type="number"
@@ -215,7 +210,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
               className={inputClass}
             />
           </label>
-          <label className="text-sm text-sand">
+          <label className="text-sm text-fg">
             Année max.
             <input
               type="number"
@@ -232,7 +227,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
 
       <Section title="Durée et note" summary={`${durationSummary}, ${ratingSummary}`}>
         <div className={`grid grid-cols-2 gap-4 ${hasPersonQuery ? 'opacity-40' : ''}`}>
-          <label className="text-sm text-sand">
+          <label className="text-sm text-fg">
             Durée min. (min)
             <input
               type="number"
@@ -245,7 +240,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
               className={inputClass}
             />
           </label>
-          <label className="text-sm text-sand">
+          <label className="text-sm text-fg">
             Durée max. (min)
             <input
               type="number"
@@ -259,7 +254,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
             />
           </label>
         </div>
-        <label className={`block text-sm text-sand ${isRecent ? 'opacity-40' : ''}`}>
+        <label className={`block text-sm text-fg ${isRecent ? 'opacity-40' : ''}`}>
           Note minimum TMDB : {filters.minRating.toFixed(1)}
           <input
             type="range"
@@ -269,18 +264,18 @@ export default function FilterPanel({ filters, onChange }: Props) {
             value={filters.minRating}
             disabled={isRecent}
             onChange={(e) => onChange({ ...filters, minRating: Number(e.target.value) })}
-            className="mt-1 w-full accent-gold"
+            className="mt-1 w-full accent-ink"
           />
         </label>
       </Section>
 
-      <div className="border-t border-cream/10 px-5 py-4">
-        <label className="flex items-center gap-2 text-sm text-sand">
+      <div className="border-t border-ink/25 px-5 py-4">
+        <label className="flex items-center gap-2 text-sm text-fg">
           <input
             type="checkbox"
             checked={filters.includeSeen}
             onChange={(e) => onChange({ ...filters, includeSeen: e.target.checked })}
-            className="h-4 w-4 accent-gold"
+            className="h-4 w-4 accent-ink"
           />
           Inclure les films/séries déjà vus (pour en revoir un)
         </label>
