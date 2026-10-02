@@ -223,6 +223,42 @@ interface CombinedCreditItem extends TmdbListItem {
   job?: string
 }
 
+export interface TitleSearchResult {
+  id: number
+  mediaType: MediaType
+  title: string
+  year: string
+  posterPath: string | null
+}
+
+export async function searchTitles(query: string): Promise<TitleSearchResult[]> {
+  const data = await tmdbFetch<{
+    results: {
+      id: number
+      media_type: string
+      title?: string
+      name?: string
+      release_date?: string
+      first_air_date?: string
+      poster_path: string | null
+    }[]
+  }>('/search/multi', { query, include_adult: 'false' })
+
+  // search/multi also returns people; keep only films and series.
+  const found: TitleSearchResult[] = []
+  for (const r of data.results) {
+    if (r.media_type !== 'movie' && r.media_type !== 'tv') continue
+    found.push({
+      id: r.id,
+      mediaType: r.media_type,
+      title: r.title ?? r.name ?? 'Sans titre',
+      year: (r.release_date ?? r.first_air_date ?? '').slice(0, 4),
+      posterPath: r.poster_path,
+    })
+  }
+  return found.slice(0, 8)
+}
+
 export async function searchPerson(query: string): Promise<{ id: number; name: string } | null> {
   const data = await tmdbFetch<{ results: { id: number; name: string; popularity: number }[] }>('/search/person', {
     query,

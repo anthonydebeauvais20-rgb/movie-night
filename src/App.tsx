@@ -4,6 +4,7 @@ import Library from './components/Library'
 import ResultCard from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
 import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError } from './lib/tmdb'
+import type { TitleSearchResult } from './lib/tmdb'
 import {
   addToWatchlist,
   getApiKey,
@@ -175,6 +176,24 @@ export default function App() {
     }
   }
 
+  function handleAddSeenManually(found: TitleSearchResult) {
+    if (isSeen(found.id, found.mediaType)) return
+    setSeenList(
+      upsertSeenEntry({
+        id: found.id,
+        mediaType: found.mediaType,
+        title: found.title,
+        posterPath: found.posterPath,
+        year: found.year,
+        dateAdded: new Date().toISOString(),
+        rating: null,
+        comment: '',
+        favorite: false,
+      }),
+    )
+    if (isInWatchlist(found.id, found.mediaType)) setWatchlist(removeFromWatchlist(found.id, found.mediaType))
+  }
+
   function handleUpdateLibraryEntry(entry: SeenEntry) {
     setSeenList(upsertSeenEntry(entry))
   }
@@ -273,6 +292,7 @@ export default function App() {
             entries={seenList}
             onUpdate={handleUpdateLibraryEntry}
             onRemove={handleRemoveLibraryEntry}
+            onAddSeen={handleAddSeenManually}
             watchlist={watchlist}
             onRemoveFromWatchlist={handleRemoveFromWatchlist}
             onMoveWatchlistToSeen={handleMoveWatchlistToSeen}

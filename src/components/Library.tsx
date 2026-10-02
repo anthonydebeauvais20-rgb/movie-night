@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import type { SeenEntry, WatchlistEntry } from '../types'
 import { posterUrl } from '../lib/tmdb'
+import type { TitleSearchResult } from '../lib/tmdb'
+import AddSeenSearch from './AddSeenSearch'
 
 interface Props {
   entries: SeenEntry[]
   onUpdate: (entry: SeenEntry) => void
   onRemove: (id: number, mediaType: string) => void
+  onAddSeen: (found: TitleSearchResult) => void
   watchlist: WatchlistEntry[]
   onRemoveFromWatchlist: (id: number, mediaType: string) => void
   onMoveWatchlistToSeen: (entry: WatchlistEntry) => void
@@ -13,20 +16,33 @@ interface Props {
 
 type Filter = 'all' | 'favorites' | 'watchlist'
 
-export default function Library({ entries, onUpdate, onRemove, watchlist, onRemoveFromWatchlist, onMoveWatchlistToSeen }: Props) {
+export default function Library({
+  entries,
+  onUpdate,
+  onRemove,
+  onAddSeen,
+  watchlist,
+  onRemoveFromWatchlist,
+  onMoveWatchlistToSeen,
+}: Props) {
   const [filter, setFilter] = useState<Filter>('all')
+  const seenKeys = new Set(entries.map((e) => `${e.mediaType}-${e.id}`))
 
   if (entries.length === 0 && watchlist.length === 0) {
     return (
-      <div className="rounded-lg border border-cream/10 bg-panel p-8 text-center text-sand">
-        Rien à afficher pour l'instant. Marque un film ou une série comme "vu", ou ajoute-le à "à voir plus tard", pour le
-        retrouver ici.
+      <div>
+        <AddSeenSearch seenKeys={seenKeys} onAdd={onAddSeen} />
+        <div className="rounded-lg border border-cream/10 bg-panel p-8 text-center text-sand">
+          Rien à afficher pour l'instant. Ajoute ci-dessus un titre que tu as déjà vu, marque un résultat de tirage comme
+          "vu", ou mets-le dans "à voir plus tard".
+        </div>
       </div>
     )
   }
 
   return (
     <div>
+      <AddSeenSearch seenKeys={seenKeys} onAdd={onAddSeen} />
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => setFilter('all')}
