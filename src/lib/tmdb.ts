@@ -23,12 +23,12 @@ async function tmdbFetch<T>(path: string, params: Record<string, string | number
   return res.json() as Promise<T>
 }
 
-export function posterUrl(path: string | null, size: 'w342' | 'w185' = 'w342'): string | null {
+export function posterUrl(path: string | null, size: 'w500' | 'w342' | 'w185' = 'w342'): string | null {
   return path ? `${IMAGE_BASE}/${size}${path}` : null
 }
 
-export function providerLogoUrl(path: string): string {
-  return `${IMAGE_BASE}/w45${path}`
+export function providerLogoUrl(path: string, size: 'w92' | 'w45' = 'w45'): string {
+  return `${IMAGE_BASE}/${size}${path}`
 }
 
 export async function fetchPopularProviders(mediaType: MediaType): Promise<WatchProvider[]> {

@@ -22,6 +22,22 @@ body,
 body {
   background-color: var(--color-night);
   background-image: radial-gradient(circle at 85% -10%, rgb(231 180 76 / 8%), transparent 55%);
+  background-repeat: no-repeat;
   color: var(--color-cream);
   font-family: var(--font-body);
+}
+
+/* Text fields signal focus with their gold border; everything else gets a ring. */
+button:focus-visible,
+summary:focus-visible,
+a:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }
