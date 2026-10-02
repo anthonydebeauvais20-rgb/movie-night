@@ -53,9 +53,16 @@ export interface DetailedTitle {
   }
 }
 
+export type GenreMatch = 'any' | 'all'
+
+export type Recency = 'any' | '7d' | '30d' | '90d'
+
 export interface Filters {
   mediaType: 'both' | MediaType
-  genreLabels: string[]
+  genreInclude: string[]
+  genreExclude: string[]
+  genreMatch: GenreMatch
+  recent: Recency
   yearMin: number
   yearMax: number
   minRating: number
@@ -65,10 +72,10 @@ export interface Filters {
   personQuery: string
 }
 
-export interface UnifiedGenre {
+export interface GenreOption {
   label: string
-  movieIds: number[]
-  tvIds: number[]
+  movieId: number | null
+  tvId: number | null
 }
 
 export interface SeenEntry {

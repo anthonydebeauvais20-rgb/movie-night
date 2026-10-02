@@ -3,7 +3,7 @@ import FilterPanel from './components/FilterPanel'
 import Library from './components/Library'
 import ResultCard from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
-import { fetchDetails, fetchGenres, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError, UNIFIED_GENRES } from './lib/tmdb'
+import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError } from './lib/tmdb'
 import {
   addToWatchlist,
   getApiKey,
@@ -16,11 +16,14 @@ import {
   saveFilters,
   upsertSeenEntry,
 } from './lib/storage'
-import type { DetailedTitle, Filters, Genre, SeenEntry, WatchlistEntry, WatchProvider } from './types'
+import type { DetailedTitle, Filters, SeenEntry, WatchlistEntry, WatchProvider } from './types'
 
 const DEFAULT_FILTERS: Filters = {
   mediaType: 'both',
-  genreLabels: [],
+  genreInclude: [],
+  genreExclude: [],
+  genreMatch: 'any',
+  recent: 'any',
   yearMin: 1970,
   yearMax: new Date().getFullYear(),
   minRating: 5,
@@ -36,9 +39,7 @@ export default function App() {
   const [hasApiKey, setHasApiKey] = useState(() => Boolean(getApiKey()))
   const [tab, setTab] = useState<Tab>('tirage')
 
-  const [filters, setFiltersState] = useState<Filters>(() => getFilters() ?? DEFAULT_FILTERS)
-  const [movieGenres, setMovieGenres] = useState<Genre[]>([])
-  const [tvGenres, setTvGenres] = useState<Genre[]>([])
+  const [filters, setFiltersState] = useState<Filters>(() => ({ ...DEFAULT_FILTERS, ...getFilters() }))
   const [providers, setProviders] = useState<WatchProvider[]>([])
 
   const [myProviders, setMyProvidersState] = useState<number[]>(() => getMyProviders())
@@ -50,8 +51,6 @@ export default function App() {
 
   useEffect(() => {
     if (!hasApiKey) return
-    fetchGenres('movie').then(setMovieGenres).catch(() => {})
-    fetchGenres('tv').then(setTvGenres).catch(() => {})
     Promise.all([fetchPopularProviders('movie'), fetchPopularProviders('tv')])
       .then(([m, t]) => {
         const merged = new Map<number, WatchProvider>()
@@ -65,12 +64,6 @@ export default function App() {
     setFiltersState(next)
     saveFilters(next)
   }
-
-  const genreCatalog = useMemo(() => {
-    if (filters.mediaType === 'movie') return movieGenres.map((g) => g.name)
-    if (filters.mediaType === 'tv') return tvGenres.map((g) => g.name)
-    return UNIFIED_GENRES.map((g) => g.label)
-  }, [filters.mediaType, movieGenres, tvGenres])
 
   const excludeIds = useMemo(() => new Set(seenList.map((e) => e.id)), [seenList])
 
@@ -90,13 +83,17 @@ export default function App() {
           setError(`Aucune personne trouvée pour "${personName}".`)
           return
         }
-        picked = await pickRandomFromPerson(person.id, filters, effectiveExclude, movieGenres, tvGenres)
+        picked = await pickRandomFromPerson(person.id, filters, effectiveExclude)
       } else {
-        picked = await pickRandom(filters, effectiveExclude, movieGenres, tvGenres, myProviders)
+        picked = await pickRandom(filters, effectiveExclude, myProviders)
       }
 
       if (!picked) {
-        setError("Aucun résultat ne correspond à ces filtres. Essaie d'en assouplir quelques-uns.")
+        setError(
+          filters.recent === 'any'
+            ? "Aucun résultat ne correspond à ces filtres. Essaie d'en assouplir quelques-uns."
+            : "Aucune nouveauté ne correspond à ces filtres. Les sorties récentes sont souvent absentes des plateformes : essaie une période plus large ou assouplis les autres filtres.",
+        )
         return
       }
       const details = await fetchDetails(picked.mediaType, picked.item.id)
@@ -282,7 +279,7 @@ export default function App() {
           />
         ) : (
           <div className="space-y-5">
-            <FilterPanel filters={filters} onChange={setFilters} genreCatalog={genreCatalog} />
+            <FilterPanel filters={filters} onChange={setFilters} />
 
             <button
               onClick={handleDraw}

@@ -57,11 +57,11 @@ export function removeSeenEntry(id: number, mediaType: string): SeenEntry[] {
   return list
 }
 
-export function getFilters(): Filters | null {
+export function getFilters(): Partial<Filters> | null {
   const raw = localStorage.getItem(KEYS.filters)
   if (!raw) return null
   try {
-    return JSON.parse(raw) as Filters
+    return JSON.parse(raw) as Partial<Filters>
   } catch {
     return null
   }
