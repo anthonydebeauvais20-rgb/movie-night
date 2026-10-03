@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { MediaType, SeenEntry, WatchlistEntry } from '../types'
+import type { LibraryView, MediaType, SeenEntry, WatchlistEntry } from '../types'
 import { posterUrl } from '../lib/tmdb'
 import type { TitleSearchResult } from '../lib/tmdb'
 import { spineHeightFor, spineStyleFor } from '../lib/spines'
+import { getLibraryView, setLibraryView } from '../lib/storage'
 import { chipClass, primaryButtonClass, secondaryButtonClass } from '../lib/ui'
 import AddSeenSearch from './AddSeenSearch'
 
@@ -30,6 +31,11 @@ const shelfRowsStyle = {
   backgroundImage: `repeating-linear-gradient(to bottom, transparent 0 ${ROW - PLANK}px, var(--color-ink) ${ROW - PLANK}px ${ROW}px, transparent ${ROW}px ${ROW + ROW_GAP}px)`,
 }
 
+const VIEW_OPTIONS: [LibraryView, string][] = [
+  ['shelf', 'Étagère'],
+  ['posters', 'Affiches'],
+]
+
 export default function Library({
   entries,
   onUpdate,
@@ -40,8 +46,22 @@ export default function Library({
   onMoveWatchlistToSeen,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('all')
+  const [view, setView] = useState<LibraryView>(getLibraryView)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
   const seenKeys = new Set(entries.map(keyOf))
+
+  // In the poster grid the detail sits below a possibly long list: bring it into view when a poster is picked.
+  useEffect(() => {
+    if (view !== 'posters' || !selectedKey) return
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    detailRef.current?.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' })
+  }, [view, selectedKey])
+
+  function changeView(next: LibraryView) {
+    setView(next)
+    setLibraryView(next)
+  }
 
   const shown: (SeenEntry | WatchlistEntry)[] =
     filter === 'watchlist' ? watchlist : filter === 'favorites' ? entries.filter((e) => e.favorite) : entries
@@ -53,18 +73,19 @@ export default function Library({
     setSelectedKey(null)
   }
 
+  const isShelf = view === 'shelf'
   const emptyMessage =
     filter === 'watchlist'
       ? 'Rien dans ta liste « À voir ». Ajoute un résultat de tirage avec le bouton « À voir plus tard ».'
       : filter === 'favorites'
-        ? 'Aucun favori pour l’instant. Ouvre une cassette et ajoute-la à tes favoris.'
-        : 'Ton étagère est vide. Ajoute ci-dessus un titre que tu as déjà vu, ou marque un résultat de tirage comme vu.'
+        ? `Aucun favori pour l’instant. Ouvre ${isShelf ? 'une cassette' : 'une affiche'} et ajoute-la à tes favoris.`
+        : `${isShelf ? 'Ton étagère est vide' : 'Rien à afficher pour l’instant'}. Ajoute ci-dessus un titre que tu as déjà vu, ou marque un résultat de tirage comme vu.`
 
   return (
     <div className="space-y-6">
       <AddSeenSearch seenKeys={seenKeys} onAdd={onAddSeen} />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button onClick={() => changeFilter('all')} className={chipClass(filter === 'all')}>
           Vus ({entries.length})
         </button>
@@ -74,6 +95,13 @@ export default function Library({
         <button onClick={() => changeFilter('watchlist')} className={chipClass(filter === 'watchlist')}>
           À voir ({watchlist.length})
         </button>
+        <div className="ml-auto flex gap-2" role="group" aria-label="Affichage">
+          {VIEW_OPTIONS.map(([value, label]) => (
+            <button key={value} onClick={() => changeView(value)} aria-pressed={view === value} className={chipClass(view === value)}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {shown.length === 0 ? (
@@ -82,62 +110,133 @@ export default function Library({
         </p>
       ) : (
         <>
-          <div className="flex flex-wrap gap-x-[3px]" style={shelfRowsStyle}>
-            {shown.map((entry) => {
-              const key = keyOf(entry)
-              const isSelected = key === selectedKey
-              const isFavorite = 'favorite' in entry && entry.favorite
-              return (
-                <div key={key} className="flex items-end" style={{ height: ROW, paddingBottom: PLANK }}>
-                  <button
-                    onClick={() => setSelectedKey(isSelected ? null : key)}
-                    aria-pressed={isSelected}
-                    aria-label={`${entry.title}${entry.year ? ` (${entry.year})` : ''}`}
-                    title={entry.title}
-                    className={`spine-${spineStyleFor(entry.id)} spine-lift relative flex w-[34px] items-center justify-center rounded-t-[2px] ${
-                      isSelected ? '-translate-y-3' : 'hover:-translate-y-1'
-                    }`}
-                    style={{ height: spineHeightFor(entry.id) }}
-                  >
-                    {isFavorite && (
-                      <span className="absolute top-1.5 h-2.5 w-2.5 rounded-full bg-fluo ring-2 ring-paper" aria-hidden="true" />
-                    )}
-                    <span className="spine-label font-poster text-xs">{entry.title}</span>
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-
-          {selectedSeen ? (
-            <SeenDetail
-              key={keyOf(selectedSeen)}
-              entry={selectedSeen}
-              onUpdate={onUpdate}
-              onRemove={(id, mediaType) => {
-                onRemove(id, mediaType)
-                setSelectedKey(null)
-              }}
-            />
-          ) : selectedWatch ? (
-            <WatchlistDetail
-              key={keyOf(selectedWatch)}
-              entry={selectedWatch}
-              onMarkSeen={(entry) => {
-                onMoveWatchlistToSeen(entry)
-                setSelectedKey(null)
-              }}
-              onRemove={(id, mediaType) => {
-                onRemoveFromWatchlist(id, mediaType)
-                setSelectedKey(null)
-              }}
-            />
+          {isShelf ? (
+            <div className="flex flex-wrap gap-x-[3px]" style={shelfRowsStyle}>
+              {shown.map((entry) => {
+                const key = keyOf(entry)
+                const isSelected = key === selectedKey
+                const isFavorite = 'favorite' in entry && entry.favorite
+                return (
+                  <div key={key} className="flex items-end" style={{ height: ROW, paddingBottom: PLANK }}>
+                    <button
+                      onClick={() => setSelectedKey(isSelected ? null : key)}
+                      aria-pressed={isSelected}
+                      aria-label={`${entry.title}${entry.year ? ` (${entry.year})` : ''}`}
+                      title={entry.title}
+                      className={`spine-${spineStyleFor(entry.id)} spine-lift relative flex w-[34px] items-center justify-center rounded-t-[2px] ${
+                        isSelected ? '-translate-y-3' : 'hover:-translate-y-1'
+                      }`}
+                      style={{ height: spineHeightFor(entry.id) }}
+                    >
+                      {isFavorite && (
+                        <span className="absolute top-1.5 h-2.5 w-2.5 rounded-full bg-fluo ring-2 ring-paper" aria-hidden="true" />
+                      )}
+                      <span className="spine-label font-poster text-xs">{entry.title}</span>
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
           ) : (
-            <p className="text-sm text-muted">Touche une cassette pour la sortir du rayon.</p>
+            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+              {shown.map((entry) => {
+                const key = keyOf(entry)
+                const isSelected = key === selectedKey
+                const isFavorite = 'favorite' in entry && entry.favorite
+                return (
+                  <li key={key}>
+                    <PosterTile
+                      entry={entry}
+                      isSelected={isSelected}
+                      isFavorite={isFavorite}
+                      onClick={() => setSelectedKey(isSelected ? null : key)}
+                    />
+                  </li>
+                )
+              })}
+            </ul>
           )}
+
+          <div ref={detailRef}>
+            {selectedSeen ? (
+              <SeenDetail
+                key={keyOf(selectedSeen)}
+                entry={selectedSeen}
+                onUpdate={onUpdate}
+                onRemove={(id, mediaType) => {
+                  onRemove(id, mediaType)
+                  setSelectedKey(null)
+                }}
+              />
+            ) : selectedWatch ? (
+              <WatchlistDetail
+                key={keyOf(selectedWatch)}
+                entry={selectedWatch}
+                onMarkSeen={(entry) => {
+                  onMoveWatchlistToSeen(entry)
+                  setSelectedKey(null)
+                }}
+                onRemove={(id, mediaType) => {
+                  onRemoveFromWatchlist(id, mediaType)
+                  setSelectedKey(null)
+                }}
+              />
+            ) : (
+              <p className="text-sm text-muted">
+                {isShelf ? 'Touche une cassette pour la sortir du rayon.' : 'Touche une affiche pour ouvrir sa fiche.'}
+              </p>
+            )}
+          </div>
         </>
       )}
     </div>
+  )
+}
+
+function PosterTile({
+  entry,
+  isSelected,
+  isFavorite,
+  onClick,
+}: {
+  entry: SeenEntry | WatchlistEntry
+  isSelected: boolean
+  isFavorite: boolean
+  onClick: () => void
+}) {
+  const small = posterUrl(entry.posterPath, 'w185')
+  const large = posterUrl(entry.posterPath, 'w342')
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={isSelected}
+      aria-label={`${entry.title}${entry.year ? ` (${entry.year})` : ''}`}
+      title={entry.title}
+      className={`spine-lift relative block aspect-2/3 w-full overflow-hidden bg-tint ${
+        isSelected
+          ? '-translate-y-1 shadow-[3px_3px_0_var(--color-fluo),0_0_0_1.5px_var(--color-ink)]'
+          : 'shadow-[0_0_0_1px_var(--color-ink)] hover:-translate-y-0.5'
+      }`}
+    >
+      {small && large ? (
+        <img
+          src={small}
+          srcSet={`${small} 185w, ${large} 342w`}
+          sizes="(min-width: 640px) 140px, 30vw"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center p-2 text-center font-poster text-sm leading-tight text-fg">
+          {entry.title}
+        </span>
+      )}
+      {isFavorite && (
+        <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-fluo ring-2 ring-paper" aria-hidden="true" />
+      )}
+    </button>
   )
 }
 

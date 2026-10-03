@@ -55,6 +55,8 @@ export interface DetailedTitle {
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 
+export type LibraryView = 'shelf' | 'posters'
+
 export type GenreMatch = 'any' | 'all'
 
 export type Recency = 'any' | '7d' | '30d' | '90d'

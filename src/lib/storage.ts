@@ -1,4 +1,4 @@
-import type { Filters, SeenEntry, ThemePreference, WatchlistEntry } from '../types'
+import type { Filters, LibraryView, SeenEntry, ThemePreference, WatchlistEntry } from '../types'
 
 // The theme key is also read by the inline script in index.html, before the app loads.
 const KEYS = {
@@ -9,7 +9,16 @@ const KEYS = {
   myProviders: 'movienight:myProviders',
   watchlist: 'movienight:watchlist',
   theme: 'movienight:theme',
+  libraryView: 'movienight:libraryView',
 } as const
+
+export function getLibraryView(): LibraryView {
+  return localStorage.getItem(KEYS.libraryView) === 'posters' ? 'posters' : 'shelf'
+}
+
+export function setLibraryView(view: LibraryView): void {
+  localStorage.setItem(KEYS.libraryView, view)
+}
 
 export function getThemePreference(): ThemePreference {
   const raw = localStorage.getItem(KEYS.theme)
