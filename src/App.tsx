@@ -228,10 +228,17 @@ export default function App() {
 
   return (
     <div className="min-h-full">
-      <header className="border-b-2 border-ink">
+      <header className="site-header border-b-2 border-line">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4">
           <h1>
-            <Wordmark className="h-[18px] w-auto sm:h-5" />
+            <Wordmark className="logo-rayon h-[18px] w-auto sm:h-5" />
+            <span className="logo-nuit">
+              MOVIE<i aria-hidden="true" />NIGHT
+            </span>
+            <span className="logo-palace">
+              <i aria-hidden="true" />
+              Movie Night
+            </span>
           </h1>
           <nav className="flex gap-4 text-sm">
             {(
@@ -255,6 +262,9 @@ export default function App() {
               </button>
             ))}
           </nav>
+        </div>
+        <div className="mx-auto max-w-3xl px-4">
+          <div className="palace-rule" aria-hidden="true" />
         </div>
       </header>
 
@@ -298,14 +308,14 @@ export default function App() {
               <button
                 onClick={handleDraw}
                 disabled={loading}
-                className="mt-4 w-full bg-ink py-3.5 font-poster text-lg text-on-ink shadow-[4px_4px_0_var(--color-fluo)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_var(--color-fluo)] disabled:translate-x-0.5 disabled:translate-y-0.5 disabled:shadow-[2px_2px_0_var(--color-fluo)]"
+                className="mt-4 w-full bg-action py-3.5 font-poster text-lg text-on-action shadow-[4px_4px_0_var(--offset)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_var(--offset)] disabled:translate-x-0.5 disabled:translate-y-0.5 disabled:shadow-[2px_2px_0_var(--offset)]"
               >
                 {loading ? 'Tirage en cours…' : 'Tirer au sort'}
               </button>
             </div>
 
             {error && (
-              <p className="rounded-sm border-[1.5px] border-dashed border-ink bg-tint px-4 py-3 text-sm text-fg">{error}</p>
+              <p className="rounded-sm border-[1.5px] border-dashed border-line bg-tint px-4 py-3 text-sm text-fg">{error}</p>
             )}
 
             {result && (

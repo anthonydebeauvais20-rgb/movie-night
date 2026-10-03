@@ -6,6 +6,8 @@
       try {
         const theme = localStorage.getItem('movienight:theme')
         if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+        const direction = localStorage.getItem('movienight:direction')
+        if (direction === 'nuit' || direction === 'palace') document.documentElement.dataset.direction = direction
       } catch {}
     </script>
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -22,7 +24,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Anybody:ital,wdth,wght@0,50..150,100..900;1,50..150,100..900&family=Chivo:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Anybody:ital,wdth,wght@0,50..150,100..900;1,50..150,100..900&family=Chivo:wght@400;600;700&family=Saira:wdth,wght@50..125,100..900&family=IBM+Plex+Sans:wght@400;500;600;700&family=Josefin+Sans:wght@600;700&family=Jost:wght@400;500;600;700&display=swap"
     />
     <title>Movie Night</title>
   </head>

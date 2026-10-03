@@ -28,7 +28,7 @@ const PLANK = 5
 const ROW_GAP = 28
 const shelfRowsStyle = {
   rowGap: ROW_GAP,
-  backgroundImage: `repeating-linear-gradient(to bottom, transparent 0 ${ROW - PLANK}px, var(--color-ink) ${ROW - PLANK}px ${ROW}px, transparent ${ROW}px ${ROW + ROW_GAP}px)`,
+  backgroundImage: `repeating-linear-gradient(to bottom, transparent 0 ${ROW - PLANK}px, var(--plank) ${ROW - PLANK}px ${ROW}px, transparent ${ROW}px ${ROW + ROW_GAP}px)`,
 }
 
 const VIEW_OPTIONS: [LibraryView, string][] = [
@@ -105,7 +105,7 @@ export default function Library({
       </div>
 
       {shown.length === 0 ? (
-        <p className="rounded-sm border-[1.5px] border-dashed border-ink/60 px-4 py-6 text-center text-sm text-muted">
+        <p className="rounded-sm border-[1.5px] border-dashed border-line/60 px-4 py-6 text-center text-sm text-muted">
           {emptyMessage}
         </p>
       ) : (
@@ -229,8 +229,8 @@ function PosterTile({
       title={entry.title}
       className={`spine-lift relative block aspect-2/3 w-full overflow-hidden bg-tint ${
         isSelected
-          ? '-translate-y-1 shadow-[3px_3px_0_var(--color-fluo),0_0_0_1.5px_var(--color-ink)]'
-          : 'shadow-[0_0_0_1px_var(--color-ink)] hover:-translate-y-0.5'
+          ? '-translate-y-1 shadow-[3px_3px_0_var(--offset),0_0_0_1.5px_var(--color-line)]'
+          : 'shadow-[0_0_0_1px_var(--color-line)] hover:-translate-y-0.5'
       }`}
     >
       {small && large ? (
@@ -264,17 +264,17 @@ function DetailFrame({
 }) {
   const poster = posterUrl(entry.posterPath, 'w185')
   return (
-    <article className="jaquette-in grid grid-cols-[1.75rem_minmax(0,1fr)] overflow-hidden rounded-sm border-[1.5px] border-ink bg-paper">
+    <article className="jaquette jaquette-in grid grid-cols-[1.75rem_minmax(0,1fr)] overflow-hidden rounded-sm border-[1.5px] border-line bg-paper">
       <div className={`spine-${spineStyleFor(entry.id)}`} aria-hidden="true" />
       <div className="flex gap-4 p-4">
         {poster ? (
           <img
             src={poster}
             alt={`Affiche de ${entry.title}`}
-            className="h-36 w-24 shrink-0 object-cover shadow-[0_0_0_1px_var(--color-ink)]"
+            className="poster-frame h-36 w-24 shrink-0 object-cover shadow-[0_0_0_1px_var(--color-line)]"
           />
         ) : (
-          <div className="h-36 w-24 shrink-0 bg-tint shadow-[inset_0_0_0_1px_var(--color-ink)]" />
+          <div className="poster-frame h-36 w-24 shrink-0 bg-tint shadow-[inset_0_0_0_1px_var(--color-line)]" />
         )}
         <div className="min-w-0 flex-1">
           <h3 className="font-poster text-xl leading-tight text-fg [text-wrap:balance]">{entry.title}</h3>
@@ -330,7 +330,7 @@ function SeenDetail({
           onChange={(e) => onUpdate({ ...entry, comment: e.target.value })}
           placeholder="Optionnel"
           rows={2}
-          className="mt-1 w-full resize-none rounded-sm border-[1.5px] border-ink/40 bg-paper px-2 py-1.5 text-sm font-normal text-fg outline-none placeholder:text-muted/70 focus:border-ink"
+          className="mt-1 w-full resize-none rounded-sm border-[1.5px] border-line/40 bg-paper px-2 py-1.5 text-sm font-normal text-fg outline-none placeholder:text-muted/70 focus:border-line"
         />
       </label>
 

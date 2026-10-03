@@ -1,7 +1,8 @@
-import type { Filters, LibraryView, SeenEntry, ThemePreference, WatchlistEntry } from '../types'
+import type { ArtDirection, Filters, LibraryView, SeenEntry, ThemePreference, WatchlistEntry } from '../types'
 
-// The theme key is also read by the inline script in index.html, before the app loads.
+// The theme and direction keys are also read by the inline script in index.html, before the app loads.
 const KEYS = {
+  direction: 'movienight:direction',
   apiKey: 'movienight:apiKey',
   region: 'movienight:region',
   seen: 'movienight:seen',
@@ -18,6 +19,16 @@ export function getLibraryView(): LibraryView {
 
 export function setLibraryView(view: LibraryView): void {
   localStorage.setItem(KEYS.libraryView, view)
+}
+
+export function getArtDirection(): ArtDirection {
+  const raw = localStorage.getItem(KEYS.direction)
+  return raw === 'nuit' || raw === 'palace' ? raw : 'rayon'
+}
+
+export function setArtDirection(direction: ArtDirection): void {
+  if (direction === 'rayon') localStorage.removeItem(KEYS.direction)
+  else localStorage.setItem(KEYS.direction, direction)
 }
 
 export function getThemePreference(): ThemePreference {

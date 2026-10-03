@@ -64,7 +64,7 @@ export default function ResultCard({
   }
 
   return (
-    <article className="jaquette-in grid grid-cols-[2.25rem_minmax(0,1fr)] overflow-hidden rounded-sm border-[1.5px] border-ink bg-paper">
+    <article className="jaquette jaquette-in grid grid-cols-[2.25rem_minmax(0,1fr)] overflow-hidden rounded-sm border-[1.5px] border-line bg-paper">
       <div className={`spine-${spineStyleFor(title.id)} flex items-center justify-center py-4`} aria-hidden="true">
         <span className="spine-label font-poster text-sm">{title.title}</span>
       </div>
@@ -73,14 +73,14 @@ export default function ResultCard({
         <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-x-4 gap-y-4 p-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-x-6 sm:p-6">
           <div className="relative self-start sm:row-span-2">
             {poster ? (
-              <img src={poster} alt={`Affiche de ${title.title}`} className="w-full shadow-[0_0_0_1px_var(--color-ink)]" />
+              <img src={poster} alt={`Affiche de ${title.title}`} className="poster-frame w-full shadow-[0_0_0_1px_var(--color-line)]" />
             ) : (
-              <div className="flex aspect-2/3 w-full items-end justify-center bg-tint pb-3 text-xs text-muted shadow-[inset_0_0_0_1px_var(--color-ink)]">
+              <div className="poster-frame flex aspect-2/3 w-full items-end justify-center bg-tint pb-3 text-xs text-muted shadow-[inset_0_0_0_1px_var(--color-line)]">
                 Pas d'affiche
               </div>
             )}
             <span
-              className="absolute -right-3 -top-3 grid h-14 w-14 rotate-[10deg] place-items-center rounded-full bg-ink text-center font-wide font-black leading-none text-on-ink shadow-[3px_2px_0_var(--color-fluo)]"
+              className="rating-sticker absolute -right-3 -top-3 grid h-14 w-14 rotate-[10deg] place-items-center rounded-full bg-action text-center font-wide font-black leading-none text-on-action shadow-[3px_2px_0_var(--offset)]"
               aria-label={`Note TMDB : ${title.voteAverage.toFixed(1)} sur 10`}
             >
               <span>
@@ -107,7 +107,7 @@ export default function ResultCard({
             {title.genres.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {title.genres.map((g) => (
-                  <span key={g} className="rounded-full border border-ink/50 px-2 py-0.5 text-xs text-fg">
+                  <span key={g} className="rounded-full border border-line/50 px-2 py-0.5 text-xs text-fg">
                     {g}
                   </span>
                 ))}
@@ -165,9 +165,9 @@ export default function ResultCard({
             ) : (
               <button
                 onClick={() => setShowTrailer(true)}
-                className="flex w-full items-center gap-3 rounded-sm border-[1.5px] border-ink px-4 py-3 text-left transition hover:bg-tint"
+                className="flex w-full items-center gap-3 rounded-sm border-[1.5px] border-line px-4 py-3 text-left transition hover:bg-tint"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-on-ink shadow-[2px_2px_0_var(--color-fluo)]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-action text-on-action shadow-[2px_2px_0_var(--offset)]">
                   <svg viewBox="0 0 12 12" className="ml-0.5 h-3.5 w-3.5" fill="currentColor" aria-hidden="true">
                     <path d="M2.5 1.2v9.6L10.6 6z" />
                   </svg>
@@ -178,7 +178,7 @@ export default function ResultCard({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 border-t-[1.5px] border-dashed border-ink/60 p-4 sm:px-6">
+        <div className="flex flex-wrap items-center gap-2 border-t-[1.5px] border-dashed border-line/60 p-4 sm:px-6">
           <button onClick={onMarkSeen} aria-pressed={isSeen} className={secondaryButton}>
             {isSeen ? 'Vu' : 'Marquer comme vu'}
           </button>

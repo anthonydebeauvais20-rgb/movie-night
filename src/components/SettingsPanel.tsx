@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import {
   getApiKey,
+  getArtDirection,
   getMyProviders,
   getRegion,
   getThemePreference,
   setApiKey,
+  setArtDirection,
   setMyProviders,
   setRegion,
   setThemePreference,
 } from '../lib/storage'
-import { applyTheme } from '../lib/theme'
+import { applyAppearance } from '../lib/theme'
 import { providerLogoUrl } from '../lib/tmdb'
 import { chipClass, inputClass, primaryButtonClass } from '../lib/ui'
-import type { ThemePreference, WatchProvider } from '../types'
+import type { ArtDirection, ThemePreference, WatchProvider } from '../types'
 
 interface Props {
   onSaved: () => void
@@ -25,11 +27,18 @@ const THEME_OPTIONS: [ThemePreference, string][] = [
   ['dark', 'Sombre'],
 ]
 
+const DIRECTION_OPTIONS: [ArtDirection, string][] = [
+  ['nuit', 'Nuit américaine'],
+  ['palace', 'Palace'],
+  ['rayon', 'Le Rayon (actuelle)'],
+]
+
 export default function SettingsPanel({ onSaved, providers = [] }: Props) {
   const [key, setKey] = useState(getApiKey())
   const [region, setRegionState] = useState(getRegion())
   const [myProviders, setMyProvidersState] = useState<number[]>(getMyProviders())
   const [theme, setTheme] = useState<ThemePreference>(getThemePreference())
+  const [direction, setDirection] = useState<ArtDirection>(getArtDirection())
 
   function handleSave() {
     setApiKey(key)
@@ -42,15 +51,42 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
     setMyProvidersState((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
   }
 
-  // The theme applies and saves right away, independently of the Save button.
+  // Appearance applies and saves right away, independently of the Save button.
   function changeTheme(next: ThemePreference) {
     setTheme(next)
     setThemePreference(next)
-    applyTheme(next)
+    applyAppearance(next, direction)
+  }
+
+  function changeDirection(next: ArtDirection) {
+    setDirection(next)
+    setArtDirection(next)
+    applyAppearance(theme, next)
   }
 
   return (
-    <div className="mx-auto max-w-lg rounded-sm border-[1.5px] border-ink p-6">
+    <div className="mx-auto max-w-lg rounded-sm border-[1.5px] border-line bg-paper p-6">
+      <div className="mb-6 rounded-sm border-[1.5px] border-dashed border-line p-4">
+        <p className="text-sm font-semibold text-fg">Direction artistique à l'essai</p>
+        <p className="mt-0.5 text-xs text-muted">
+          Version de test : choisis la direction à utiliser au quotidien, en clair comme en sombre, avant de trancher. Les
+          logos sont provisoires.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Direction artistique">
+          {DIRECTION_OPTIONS.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => changeDirection(value)}
+              aria-pressed={direction === value}
+              className={chipClass(direction === value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <h2 className="font-poster text-2xl text-fg">Configuration</h2>
       <p className="mt-2 text-sm text-muted">
         L'app utilise TMDB (The Movie Database) pour les infos films/séries. Crée une clé API gratuite sur{' '}
@@ -104,7 +140,7 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
                 type="button"
                 className={`overflow-hidden rounded-md border-2 transition ${
                   myProviders.includes(p.provider_id)
-                    ? 'border-ink shadow-[2px_2px_0_var(--color-fluo)]'
+                    ? 'border-line shadow-[2px_2px_0_var(--offset)]'
                     : 'border-transparent opacity-50 hover:opacity-100'
                 }`}
               >
@@ -119,7 +155,7 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
         Enregistrer
       </button>
 
-      <div className="mt-6 border-t border-ink/25 pt-5">
+      <div className="mt-6 border-t border-line/25 pt-5">
         <p className="text-sm font-semibold text-fg">Apparence</p>
         <p className="mt-0.5 text-xs text-muted">« Automatique » suit le réglage clair ou sombre de ton appareil.</p>
         <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Apparence">
