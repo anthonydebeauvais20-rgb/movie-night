@@ -124,12 +124,12 @@ export default function Library({
                       aria-label={`${entry.title}${entry.year ? ` (${entry.year})` : ''}`}
                       title={entry.title}
                       className={`spine-${spineStyleFor(entry.id)} spine-lift relative flex w-[34px] items-center justify-center rounded-t-[2px] ${
-                        isSelected ? '-translate-y-3' : 'hover:-translate-y-1'
-                      }`}
+                        isFavorite ? 'pt-6' : ''
+                      } ${isSelected ? '-translate-y-3' : 'hover:-translate-y-1'}`}
                       style={{ height: spineHeightFor(entry.id) }}
                     >
                       {isFavorite && (
-                        <span className="absolute top-1.5 h-2.5 w-2.5 rounded-full bg-fluo ring-2 ring-paper" aria-hidden="true" />
+                        <FavoriteStar className="absolute top-1 h-4 w-4" />
                       )}
                       <span className="spine-label font-poster text-xs">{entry.title}</span>
                     </button>
@@ -193,6 +193,21 @@ export default function Library({
   )
 }
 
+// Outlined in the paper color so it stays readable over any poster or spine.
+function FavoriteStar({ className }: { className: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={`fill-fluo stroke-paper [paint-order:stroke] ${className}`}
+      strokeWidth="3"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.2l-5.9 3.4 1.3-6.6L2.5 9.4l6.6-.8z" />
+    </svg>
+  )
+}
+
 function PosterTile({
   entry,
   isSelected,
@@ -234,7 +249,7 @@ function PosterTile({
         </span>
       )}
       {isFavorite && (
-        <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-fluo ring-2 ring-paper" aria-hidden="true" />
+        <FavoriteStar className="absolute right-1 top-1 h-5 w-5" />
       )}
     </button>
   )
