@@ -9,6 +9,12 @@
       "autoPort": true
     },
     {
+      "name": "movie-night-mobile",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--host", "--port", "5180", "--strictPort"],
+      "port": 5180
+    },
+    {
       "name": "movie-night-test-da",
       "runtimeExecutable": "node",
       "runtimeArgs": ["../Movie night - test DA/node_modules/vite/bin/vite.js", "../Movie night - test DA", "--port", "5174", "--strictPort", "--host"],
