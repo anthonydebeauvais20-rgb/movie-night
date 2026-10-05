@@ -50,7 +50,7 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-lg rounded-sm border-[1.5px] border-ink p-6">
+    <div className="mx-auto max-w-lg rounded-sm border border-line bg-paper p-6">
       <h2 className="font-poster text-2xl text-fg">Configuration</h2>
       <p className="mt-2 text-sm text-muted">
         L'app utilise TMDB (The Movie Database) pour les infos films/séries. Crée une clé API gratuite sur{' '}
@@ -104,7 +104,7 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
                 type="button"
                 className={`overflow-hidden rounded-md border-2 transition ${
                   myProviders.includes(p.provider_id)
-                    ? 'border-ink shadow-[2px_2px_0_var(--color-fluo)]'
+                    ? 'border-line'
                     : 'border-transparent opacity-50 hover:opacity-100'
                 }`}
               >
@@ -119,7 +119,7 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
         Enregistrer
       </button>
 
-      <div className="mt-6 border-t border-ink/25 pt-5">
+      <div className="mt-6 border-t border-line/25 pt-5">
         <p className="text-sm font-semibold text-fg">Apparence</p>
         <p className="mt-0.5 text-xs text-muted">« Automatique » suit le réglage clair ou sombre de ton appareil.</p>
         <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Apparence">

@@ -4,7 +4,6 @@ import Library from './components/Library'
 import ResultCard from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
 import Shelf from './components/Shelf'
-import Wordmark from './components/Wordmark'
 import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError } from './lib/tmdb'
 import type { TitleSearchResult } from './lib/tmdb'
 import {
@@ -228,10 +227,13 @@ export default function App() {
 
   return (
     <div className="min-h-full">
-      <header className="border-b-2 border-ink">
+      <header>
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4">
           <h1>
-            <Wordmark className="h-[18px] w-auto sm:h-5" />
+            <span className="logo-palace">
+              <i aria-hidden="true" />
+              Movie Night
+            </span>
           </h1>
           <nav className="flex gap-4 text-sm">
             {(
@@ -247,7 +249,7 @@ export default function App() {
                 aria-current={tab === id ? 'page' : undefined}
                 className={`py-1 transition ${
                   tab === id
-                    ? 'font-semibold text-fg underline decoration-fluo decoration-[3px] underline-offset-[7px]'
+                    ? 'font-semibold text-fg underline decoration-fluo decoration-2 underline-offset-[7px]'
                     : 'text-muted hover:text-fg'
                 }`}
               >
@@ -255,6 +257,9 @@ export default function App() {
               </button>
             ))}
           </nav>
+        </div>
+        <div className="mx-auto max-w-3xl px-4">
+          <div className="palace-rule" aria-hidden="true" />
         </div>
       </header>
 
@@ -298,14 +303,14 @@ export default function App() {
               <button
                 onClick={handleDraw}
                 disabled={loading}
-                className="mt-4 w-full bg-ink py-3.5 font-poster text-lg text-on-ink shadow-[4px_4px_0_var(--color-fluo)] transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_var(--color-fluo)] disabled:translate-x-0.5 disabled:translate-y-0.5 disabled:shadow-[2px_2px_0_var(--color-fluo)]"
+                className="mt-4 w-full rounded-sm bg-action py-3.5 font-poster text-lg text-on-action transition hover:brightness-110 disabled:opacity-60"
               >
                 {loading ? 'Tirage en cours…' : 'Tirer au sort'}
               </button>
             </div>
 
             {error && (
-              <p className="rounded-sm border-[1.5px] border-dashed border-ink bg-tint px-4 py-3 text-sm text-fg">{error}</p>
+              <p className="rounded-sm border border-dashed border-line bg-tint px-4 py-3 text-sm text-fg">{error}</p>
             )}
 
             {result && (

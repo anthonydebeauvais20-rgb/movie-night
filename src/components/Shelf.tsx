@@ -36,7 +36,7 @@ export default function Shelf({ labels, loading, picked }: Props) {
   const chosen = !loading && picked ? PICKABLE[picked.id % PICKABLE.length] : null
 
   return (
-    <div className="flex h-[150px] items-end justify-center gap-[3px] overflow-hidden border-b-[5px] border-ink" aria-hidden="true">
+    <div className="flex h-[150px] items-end justify-center gap-[3px] overflow-hidden border-b-[5px] border-plank" aria-hidden="true">
       {HEIGHTS.map((height, i) => {
         const isChosen = i === chosen
         const lifted = isChosen || i === rollingIndex

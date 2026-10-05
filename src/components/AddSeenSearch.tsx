@@ -43,7 +43,7 @@ export default function AddSeenSearch({ seenKeys, onAdd }: Props) {
   }, [trimmed])
 
   return (
-    <div className="rounded-sm border-[1.5px] border-ink p-4">
+    <div className="rounded-sm border border-line bg-paper p-4">
       <label htmlFor="add-seen-search" className="block font-wide text-base font-bold text-fg">
         Ajouter un titre déjà vu
       </label>
@@ -65,14 +65,14 @@ export default function AddSeenSearch({ seenKeys, onAdd }: Props) {
       )}
 
       {results.length > 0 && (
-        <ul className="mt-3 divide-y divide-ink/20">
+        <ul className="mt-3 divide-y divide-line/20">
           {results.map((found) => {
             const poster = posterUrl(found.posterPath, 'w185')
             const alreadySeen = seenKeys.has(`${found.mediaType}-${found.id}`)
             return (
               <li key={`${found.mediaType}-${found.id}`} className="flex items-center gap-3 py-2">
                 {poster ? (
-                  <img src={poster} alt="" className="h-14 w-10 shrink-0 object-cover shadow-[0_0_0_1px_var(--color-ink)]" />
+                  <img src={poster} alt="" className="h-14 w-10 shrink-0 object-cover shadow-[0_0_0_1px_var(--color-line)]" />
                 ) : (
                   <div className="h-14 w-10 shrink-0 bg-tint" />
                 )}

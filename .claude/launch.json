@@ -5,13 +5,21 @@
       "name": "movie-night-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 5173
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "movie-night-test-da",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["../Movie night - test DA/node_modules/vite/bin/vite.js", "../Movie night - test DA", "--port", "5174", "--strictPort", "--host"],
+      "port": 5174
     },
     {
       "name": "movie-night-preview",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "preview"],
-      "port": 4173
+      "port": 4173,
+      "autoPort": true
     }
   ]
 }

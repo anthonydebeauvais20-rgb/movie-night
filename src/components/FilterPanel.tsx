@@ -25,7 +25,7 @@ const MATCH_OPTIONS: [GenreMatch, string][] = [
 // A collapsible row whose summary always shows what is currently applied, so closed filters stay readable.
 function Section({ title, summary, children }: { title: string; summary: ReactNode; children: ReactNode }) {
   return (
-    <details className="group border-t border-ink/25">
+    <details className="group border-t border-line/25">
       <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-3.5 [&::-webkit-details-marker]:hidden">
         <span className="min-w-28 shrink-0 whitespace-nowrap font-wide text-base font-bold text-fg">{title}</span>
         <span className="min-w-0 flex-1 truncate text-sm text-muted">{summary}</span>
@@ -100,7 +100,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
       : 'toutes notes'
 
   return (
-    <div className="overflow-hidden rounded-sm border-[1.5px] border-ink bg-paper">
+    <div className="overflow-hidden rounded-sm border border-line bg-paper">
       <div className="flex flex-wrap gap-2 p-5">
         {(['both', 'movie', 'tv'] as const).map((type) => (
           <button key={type} onClick={() => changeMediaType(type)} className={chipClass(filters.mediaType === type)}>
@@ -124,10 +124,10 @@ export default function FilterPanel({ filters, onChange }: Props) {
                 aria-label={`${label} : ${state}`}
                 className={`rounded-full border px-3 py-1 text-xs transition ${
                   state === 'souhaité'
-                    ? 'border-ink bg-ink text-on-ink shadow-[2px_2px_0_var(--color-fluo)]'
+                    ? 'border-action bg-action text-on-action'
                     : state === 'exclu'
-                      ? 'border-dashed border-ink text-muted line-through decoration-fluo decoration-2'
-                      : 'border-ink/40 text-fg hover:bg-tint'
+                      ? 'border-dashed border-line text-muted line-through decoration-fluo decoration-2'
+                      : 'border-line/40 text-fg hover:bg-tint'
                 }`}
               >
                 {state === 'souhaité' && '+ '}
@@ -164,7 +164,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
         )}
       </Section>
 
-      <div className="border-t border-ink/25 px-5 py-4">
+      <div className="border-t border-line/25 px-5 py-4">
         <label className="block text-sm font-semibold text-fg">
           Acteur ou réalisateur
           <input
@@ -269,7 +269,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
         </label>
       </Section>
 
-      <div className="border-t border-ink/25 px-5 py-4">
+      <div className="border-t border-line/25 px-5 py-4">
         <label className="flex items-center gap-2 text-sm text-fg">
           <input
             type="checkbox"

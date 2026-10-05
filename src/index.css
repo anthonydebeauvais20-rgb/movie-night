@@ -8,74 +8,94 @@
   --color-over: var(--over);
   --color-fg: var(--fg);
   --color-muted: var(--muted);
-  --color-on-ink: var(--on-ink);
   --color-on-fluo: var(--on-fluo);
+  --color-line: var(--line);
+  --color-action: var(--action);
+  --color-on-action: var(--on-action);
+  --color-plank: var(--plank);
 
-  --font-display: "Anybody", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Chivo", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Josefin Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Jost", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Light theme: blue and fluo-pink inks printed on paper. */
+/*
+ * Palace: an Art déco cinema, emerald velvet and brass.
+ * Color roles: ground = page, paper = panels, line = borders, action = primary buttons and selected chips,
+ * fluo = brass accent (underlines, badges, focus, sun), offset = shifted shadow under active elements (unused here),
+ * ink = brand green (stars, chevrons, form controls), plank = shelf planks, sp1–sp4 = cassette spines.
+ * In light, brass is decoration only: it is not contrasted enough for text.
+ */
 :root {
   color-scheme: light;
-  --paper: #fafaf7;
-  --tint: #e4e8f5;
-  --ink: #2b4ba8;
-  --fluo: #ff4fa3;
-  --over: #6b3a9c;
-  --fg: #2b4ba8;
-  --muted: #5a6fb5;
-  --on-ink: #fafaf7;
-  --on-fluo: #171b3a;
-  --blend: multiply;
-  --logo-1: var(--ink);
-  --logo-2: var(--over);
-  --logo-3: var(--fluo);
+  --ground: #e8efea;
+  --paper: #f5f9f6;
+  --tint: #dce7e0;
+  --ink: #0e4d3c;
+  --fluo: #b8893b;
+  --on-fluo: #0a231c;
+  --over: #6b1e2b;
+  --fg: #0e3b2e;
+  --muted: #4f6f63;
+  --line: #b8893b;
+  --action: #0e4d3c;
+  --on-action: #f1e7c9;
+  --offset: transparent;
+  --plank: #0e3b2e;
+  --sp1: #0e4d3c; --sp1-tx: #f1e7c9;
+  --sp2: #b8893b; --sp2-tx: #0a231c;
+  --sp3: #6b1e2b; --sp3-tx: #f1e7c9;
+  --sp4: #8db6a1; --sp4-tx: #0a231c;
 }
 
-/* Dark theme: light inks on night-blue paper, so overprints lighten instead of darken. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #171b3a;
-    --tint: #252c5a;
-    --ink: #7f98ff;
-    --fluo: #ff5fae;
-    --over: #c9a8ff;
-    --fg: #f2f3f8;
-    --muted: #a9b3e0;
-    --on-ink: #171b3a;
-    --on-fluo: #171b3a;
-    --blend: screen;
-    --logo-2: var(--fg);
+    --ground: #0a231c;
+    --paper: #0f2f26;
+    --tint: #15392f;
+    --ink: #6faf92;
+    --fluo: #c99a45;
+    --on-fluo: #0a231c;
+    --fg: #efe6cc;
+    --muted: #a9b9a8;
+    --line: #c99a45;
+    --action: #c99a45;
+    --on-action: #0a231c;
+    --plank: #c99a45;
+    --sp1: #164a3b; --sp1-tx: #efe6cc;
+    --sp2: #c99a45; --sp2-tx: #0a231c;
+    --sp3: #6b1e2b; --sp3-tx: #efe6cc;
+    --sp4: #6faf92; --sp4-tx: #0a231c;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #171b3a;
-  --tint: #252c5a;
-  --ink: #7f98ff;
-  --fluo: #ff5fae;
-  --over: #c9a8ff;
-  --fg: #f2f3f8;
-  --muted: #a9b3e0;
-  --on-ink: #171b3a;
-  --on-fluo: #171b3a;
-  --blend: screen;
-  --logo-2: var(--fg);
+  --ground: #0a231c;
+  --paper: #0f2f26;
+  --tint: #15392f;
+  --ink: #6faf92;
+  --fluo: #c99a45;
+  --on-fluo: #0a231c;
+  --fg: #efe6cc;
+  --muted: #a9b9a8;
+  --line: #c99a45;
+  --action: #c99a45;
+  --on-action: #0a231c;
+  --plank: #c99a45;
+  --sp1: #164a3b; --sp1-tx: #efe6cc;
+  --sp2: #c99a45; --sp2-tx: #0a231c;
+  --sp3: #6b1e2b; --sp3-tx: #efe6cc;
+  --sp4: #6faf92; --sp4-tx: #0a231c;
 }
 
 @utility font-wide {
   font-family: var(--font-display);
-  font-stretch: 125%;
 }
 
 @utility font-poster {
   font-family: var(--font-display);
-  font-stretch: 140%;
-  font-style: italic;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 html,
@@ -85,7 +105,7 @@ body,
 }
 
 body {
-  background-color: var(--paper);
+  background-color: var(--ground);
   color: var(--fg);
   font-family: var(--font-body);
 }
@@ -99,12 +119,39 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-/* Cassette spines, printed with the two inks only. */
-.spine-ink { background: var(--ink); color: var(--on-ink); }
-.spine-fluo { background: var(--fluo); color: var(--on-fluo); }
-.spine-over { background: var(--over); color: var(--on-ink); }
-.spine-tint { background: var(--tint); color: var(--fg); }
-.spine-outline { background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--ink); color: var(--fg); }
+/* Provisional logo: the name under a brass sunburst. */
+.logo-palace {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1;
+  color: var(--fg);
+}
+
+.logo-palace i {
+  width: 38px;
+  height: 14px;
+  margin-bottom: 3px;
+  border-radius: 38px 38px 0 0;
+  background: repeating-conic-gradient(from 270deg at 50% 100%, var(--fluo) 0 7deg, transparent 7deg 16deg);
+}
+
+/* Double brass rule under the header. */
+.palace-rule {
+  height: 5px;
+  border-top: 1px solid var(--fluo);
+  border-bottom: 1px solid var(--fluo);
+}
+
+/* Cassette spines. */
+.spine-ink { background: var(--sp1); color: var(--sp1-tx); }
+.spine-fluo { background: var(--sp2); color: var(--sp2-tx); }
+.spine-over { background: var(--sp3); color: var(--sp3-tx); }
+.spine-tint { background: var(--sp4); color: var(--sp4-tx); }
+.spine-outline { background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--fg); }
 
 .spine-label {
   writing-mode: vertical-rl;
@@ -119,37 +166,32 @@ select:focus-visible {
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* On a new draw, the pink ink lands off-register then snaps onto the title and disappears. */
-.calage-ink {
-  position: absolute;
-  inset: 0;
-  color: var(--fluo);
-  mix-blend-mode: var(--blend);
-  opacity: 0;
-  pointer-events: none;
-  animation: calage 0.27s steps(1, end) 0.12s both;
+/* Posters sit in a brass arch, like a cinema-palace doorway. */
+.poster-frame {
+  border-radius: 46px 46px 3px 3px;
+  box-shadow: inset 0 0 0 1px var(--fluo), 0 0 0 3px var(--paper), 0 0 0 4px var(--fluo);
 }
 
-@keyframes calage {
-  0% { transform: translate(10px, -6px); opacity: 1; }
-  33% { transform: translate(5px, -3px); opacity: 1; }
-  66% { transform: translate(1px, -1px); opacity: 1; }
-  100% { transform: translate(0, 0); opacity: 0; }
+.rating-sticker {
+  background: var(--fluo);
+  color: var(--on-fluo);
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--fluo);
 }
 
+/* On a new draw, the curtain opens from the center onto the jaquette. */
 .jaquette-in {
-  animation: jaquette-in 0.22s ease-out both;
+  animation: curtain 0.45s ease-out both;
 }
 
-@keyframes jaquette-in {
-  from { opacity: 0; transform: translateY(-10px); }
+@keyframes curtain {
+  from { clip-path: inset(0 50% 0 50%); }
+  to { clip-path: inset(0 0 0 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
   }
-  .calage-ink,
   .jaquette-in {
     animation: none;
   }

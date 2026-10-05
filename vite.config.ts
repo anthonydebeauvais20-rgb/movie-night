@@ -16,8 +16,8 @@ export default defineConfig({
         short_name: 'Movie Night',
         description: 'Tirage aléatoire de films et séries pour la soirée.',
         lang: 'fr',
-        theme_color: '#171b3a',
-        background_color: '#171b3a',
+        theme_color: '#0a231c',
+        background_color: '#0a231c',
         display: 'standalone',
         start_url: '/',
         icons: [
