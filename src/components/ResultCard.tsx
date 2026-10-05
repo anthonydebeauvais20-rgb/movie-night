@@ -4,8 +4,13 @@ import { posterUrl, providerLogoUrl } from '../lib/tmdb'
 import { spineStyleFor } from '../lib/spines'
 import { primaryButtonClass, secondaryButtonClass as secondaryButton } from '../lib/ui'
 
+// idle = curtain open and still; closing = drawn over the title during a new draw; opening = parting on a new title.
+export type CurtainState = 'idle' | 'closing' | 'opening'
+
 interface Props {
   title: DetailedTitle
+  curtain: CurtainState
+  onCurtainOpened: () => void
   isSeen: boolean
   isFavorite: boolean
   isInWatchlist: boolean
@@ -17,6 +22,8 @@ interface Props {
 
 export default function ResultCard({
   title,
+  curtain,
+  onCurtainOpened,
   isSeen,
   isFavorite,
   isInWatchlist,
@@ -64,12 +71,23 @@ export default function ResultCard({
   }
 
   return (
-    <article className="jaquette-in grid grid-cols-[2.25rem_minmax(0,1fr)] overflow-hidden rounded-sm border border-line bg-paper">
+    <article
+      aria-busy={curtain === 'closing'}
+      className="relative grid grid-cols-[2.25rem_minmax(0,1fr)] overflow-hidden rounded-sm border border-line bg-paper"
+    >
       <div className={`spine-${spineStyleFor(title.id)} flex items-center justify-center py-4`} aria-hidden="true">
         <span className="spine-label font-poster text-sm">{title.title}</span>
       </div>
 
-      <div className="min-w-0">
+      <div className="curtain" data-state={curtain} aria-hidden="true">
+        <span className="curtain-panel curtain-left" />
+        <span
+          className="curtain-panel curtain-right"
+          onAnimationEnd={curtain === 'opening' ? onCurtainOpened : undefined}
+        />
+      </div>
+
+      <div className="min-w-0" inert={curtain === 'closing'}>
         <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-x-4 gap-y-4 p-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-x-6 sm:p-6">
           <div className="relative self-start sm:row-span-2">
             {poster ? (

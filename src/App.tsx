@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import FilterPanel from './components/FilterPanel'
 import Library from './components/Library'
 import ResultCard from './components/ResultCard'
+import type { CurtainState } from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
 import Shelf from './components/Shelf'
 import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError } from './lib/tmdb'
@@ -37,6 +38,10 @@ const DEFAULT_FILTERS: Filters = {
 
 type Tab = 'tirage' | 'bibliotheque' | 'reglages'
 
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+// Long enough for the shelf roll and the closing curtain to read, even when TMDB answers instantly.
+const MIN_DRAW_MS = 700
+
 export default function App() {
   const [hasApiKey, setHasApiKey] = useState(() => Boolean(getApiKey()))
   const [tab, setTab] = useState<Tab>('tirage')
@@ -50,6 +55,15 @@ export default function App() {
   const [result, setResult] = useState<DetailedTitle | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [curtain, setCurtain] = useState<CurtainState>('idle')
+  // Bumped on every successful draw: remounts the card (so its curtain parts) and triggers the scroll to it.
+  const [drawCount, setDrawCount] = useState(0)
+  const stageRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (drawCount === 0) return
+    stageRef.current?.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+  }, [drawCount])
 
   useEffect(() => {
     if (!hasApiKey) return
@@ -73,7 +87,16 @@ export default function App() {
   async function handleDraw() {
     setLoading(true)
     setError(null)
-    setResult(null)
+    // The current title stays on stage while its curtain closes, instead of vanishing and collapsing the page.
+    if (result) setCurtain('closing')
+    const minDuration = new Promise((resolve) => setTimeout(resolve, prefersReducedMotion() ? 0 : MIN_DRAW_MS))
+
+    function fail(message: string) {
+      setResult(null)
+      setCurtain('idle')
+      setError(message)
+    }
+
     try {
       const effectiveExclude = new Set(filters.includeSeen ? [] : excludeIds)
       if (result) effectiveExclude.add(result.id)
@@ -83,7 +106,7 @@ export default function App() {
       if (personName) {
         const person = await searchPerson(personName)
         if (!person) {
-          setError(`Aucune personne trouvée pour "${personName}".`)
+          fail(`Aucune personne trouvée pour "${personName}".`)
           return
         }
         picked = await pickRandomFromPerson(person.id, filters, effectiveExclude)
@@ -92,7 +115,7 @@ export default function App() {
       }
 
       if (!picked) {
-        setError(
+        fail(
           filters.recent === 'any'
             ? "Aucun résultat ne correspond à ces filtres. Essaie d'en assouplir quelques-uns."
             : "Aucune nouveauté ne correspond à ces filtres. Les sorties récentes sont souvent absentes des plateformes : essaie une période plus large ou assouplis les autres filtres.",
@@ -100,13 +123,16 @@ export default function App() {
         return
       }
       const details = await fetchDetails(picked.mediaType, picked.item.id)
+      await minDuration
       setResult(details)
+      setCurtain('opening')
+      setDrawCount((count) => count + 1)
     } catch (e) {
-      if (e instanceof TmdbError && e.message === 'invalid_api_key') {
-        setError('Clé API invalide. Vérifie-la dans les réglages.')
-      } else {
-        setError('Une erreur est survenue en contactant TMDB. Réessaie dans un instant.')
-      }
+      fail(
+        e instanceof TmdbError && e.message === 'invalid_api_key'
+          ? 'Clé API invalide. Vérifie-la dans les réglages.'
+          : 'Une erreur est survenue en contactant TMDB. Réessaie dans un instant.',
+      )
     } finally {
       setLoading(false)
     }
@@ -245,7 +271,11 @@ export default function App() {
             ).map(([id, label]) => (
               <button
                 key={id}
-                onClick={() => setTab(id)}
+                onClick={() => {
+                  setTab(id)
+                  // Coming back to the draw tab must not replay the curtain on a title already revealed.
+                  setCurtain('idle')
+                }}
                 aria-current={tab === id ? 'page' : undefined}
                 className={`py-1 transition ${
                   tab === id
@@ -314,16 +344,21 @@ export default function App() {
             )}
 
             {result && (
-              <ResultCard
-                title={result}
-                isSeen={isSeen(result.id, result.mediaType)}
-                isFavorite={isFavorite(result.id, result.mediaType)}
-                isInWatchlist={isInWatchlist(result.id, result.mediaType)}
-                onMarkSeen={handleMarkSeen}
-                onToggleFavorite={handleToggleFavorite}
-                onToggleWatchlist={handleToggleWatchlist}
-                onReroll={handleDraw}
-              />
+              <div ref={stageRef} className="scroll-mt-4">
+                <ResultCard
+                  key={drawCount}
+                  title={result}
+                  curtain={curtain}
+                  onCurtainOpened={() => setCurtain('idle')}
+                  isSeen={isSeen(result.id, result.mediaType)}
+                  isFavorite={isFavorite(result.id, result.mediaType)}
+                  isInWatchlist={isInWatchlist(result.id, result.mediaType)}
+                  onMarkSeen={handleMarkSeen}
+                  onToggleFavorite={handleToggleFavorite}
+                  onToggleWatchlist={handleToggleWatchlist}
+                  onReroll={handleDraw}
+                />
+              </div>
             )}
           </div>
         )}

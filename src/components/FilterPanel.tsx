@@ -164,24 +164,35 @@ export default function FilterPanel({ filters, onChange }: Props) {
         )}
       </Section>
 
-      <div className="border-t border-line/25 px-5 py-4">
-        <label className="block text-sm font-semibold text-fg">
-          Acteur ou réalisateur
+      <Section
+        title="Acteur ou réalisateur"
+        summary={hasPersonQuery ? <span className="font-semibold text-fg">{filters.personQuery.trim()}</span> : 'Tout le monde'}
+      >
+        <label className="block text-sm text-fg">
+          Nom
           <input
             type="text"
             value={filters.personQuery}
             onChange={(e) => onChange({ ...filters, personQuery: e.target.value })}
             placeholder="Ex. Marion Cotillard, Bong Joon-ho…"
-            className={`${inputClass} font-normal`}
+            className={inputClass}
           />
-          {hasPersonQuery && (
-            <span className="mt-1 block text-xs font-normal text-muted">
+        </label>
+        {hasPersonQuery && (
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-xs text-muted">
               Cible toute la filmographie de cette personne. Les filtres plateformes (Réglages) et durée ne s'appliquent
               pas dans ce mode (non fournis par l'API pour une recherche par personne).
-            </span>
-          )}
-        </label>
-      </div>
+            </p>
+            <button
+              onClick={() => onChange({ ...filters, personQuery: '' })}
+              className="shrink-0 text-xs font-semibold text-fg underline underline-offset-4 hover:text-muted"
+            >
+              Effacer
+            </button>
+          </div>
+        )}
+      </Section>
 
       <Section title="Période" summary={periodSummary}>
         <div className="flex flex-wrap gap-2">

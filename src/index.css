@@ -188,11 +188,94 @@ select:focus-visible {
   to { clip-path: inset(0 0 0 0); }
 }
 
+/*
+ * Draw result: an emerald velvet curtain with brass edges. It closes over the current title while a new one
+ * is drawn, then parts from the center on the new title. Open by default: each panel sits off its own side.
+ */
+.curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.curtain[data-state="closing"] {
+  pointer-events: auto;
+}
+
+.curtain-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.5%;
+  /* Soft rounded folds rather than hard stripes, so it reads as draped velvet. */
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgb(0 0 0 / 34%) 0,
+      rgb(0 0 0 / 8%) 7px,
+      rgb(255 255 255 / 10%) 13px,
+      rgb(0 0 0 / 8%) 19px,
+      rgb(0 0 0 / 34%) 26px
+    ),
+    var(--sp1);
+  transform: translateX(var(--curtain-out));
+}
+
+/* Brass fringe along the hem. */
+.curtain-panel::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 9px;
+  background:
+    linear-gradient(var(--fluo), var(--fluo)) top / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, var(--fluo) 0 2px, transparent 2px 5px);
+}
+
+.curtain-left {
+  left: 0;
+  --curtain-out: -101%;
+  box-shadow: inset -3px 0 0 var(--fluo);
+}
+
+.curtain-right {
+  right: 0;
+  --curtain-out: 101%;
+  box-shadow: inset 3px 0 0 var(--fluo);
+}
+
+/* The short delay lets the page finish scrolling to the card before the curtain parts. */
+.curtain[data-state="opening"] .curtain-panel {
+  animation: curtain-part 0.75s cubic-bezier(0.65, 0, 0.25, 1) 0.3s both;
+}
+
+.curtain[data-state="closing"] .curtain-panel {
+  animation: curtain-draw 0.4s cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+
+@keyframes curtain-part {
+  from { transform: translateX(0); }
+  to { transform: translateX(var(--curtain-out)); }
+}
+
+@keyframes curtain-draw {
+  from { transform: translateX(var(--curtain-out)); }
+  to { transform: translateX(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
   }
-  .jaquette-in {
-    animation: none;
+  .jaquette-in,
+  .curtain-panel {
+    animation: none !important;
+  }
+  .curtain[data-state="closing"] .curtain-panel {
+    transform: translateX(0);
   }
 }
