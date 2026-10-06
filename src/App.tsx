@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import DrawHistory from './components/DrawHistory'
 import FilterPanel from './components/FilterPanel'
+import LegalPage, { LEGAL_ROUTES } from './components/LegalPage'
+import type { LegalRoute } from './components/LegalPage'
 import Library from './components/Library'
 import ResultCard from './components/ResultCard'
 import type { CurtainState } from './components/ResultCard'
@@ -8,18 +11,24 @@ import Shelf from './components/Shelf'
 import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError } from './lib/tmdb'
 import type { TitleSearchResult } from './lib/tmdb'
 import {
+  addIgnored,
   addToWatchlist,
+  clearHistory,
   getApiKey,
   getFilters,
+  getHistory,
+  getIgnored,
   getMyProviders,
   getSeenList,
   getWatchlist,
+  pushHistory,
   removeFromWatchlist,
+  removeIgnored,
   removeSeenEntry,
   saveFilters,
   upsertSeenEntry,
 } from './lib/storage'
-import type { DetailedTitle, Filters, SeenEntry, WatchlistEntry, WatchProvider } from './types'
+import type { DetailedTitle, Filters, SeenEntry, TitleRef, WatchlistEntry, WatchProvider } from './types'
 
 const DEFAULT_FILTERS: Filters = {
   mediaType: 'both',
@@ -43,10 +52,36 @@ type Tab = 'tirage' | 'bibliotheque' | 'reglages'
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 // Long enough for the shelf roll and the closing curtain to read, even when TMDB answers instantly.
 const MIN_DRAW_MS = 700
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, prefersReducedMotion() ? 0 : ms))
+
+const refOf = (t: DetailedTitle): TitleRef => ({
+  id: t.id,
+  mediaType: t.mediaType,
+  title: t.title,
+  posterPath: t.posterPath,
+  year: t.year,
+  dateAdded: new Date().toISOString(),
+})
+
+// Legal pages live at #/confidentialite and #/mentions-legales, so they have a stable link (stores require one).
+const legalRouteOf = (hash: string): LegalRoute | null => (LEGAL_ROUTES.includes(hash as LegalRoute) ? (hash as LegalRoute) : null)
 
 export default function App() {
   const [hasApiKey, setHasApiKey] = useState(() => Boolean(getApiKey()))
   const [tab, setTab] = useState<Tab>('tirage')
+  const [legalRoute, setLegalRoute] = useState<LegalRoute | null>(() => legalRouteOf(window.location.hash))
+
+  useEffect(() => {
+    const onHashChange = () => setLegalRoute(legalRouteOf(window.location.hash))
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  function leaveLegalPage() {
+    if (!legalRoute) return
+    history.pushState(null, '', window.location.pathname + window.location.search)
+    setLegalRoute(null)
+  }
 
   const [filters, setFiltersState] = useState<Filters>(() => ({ ...DEFAULT_FILTERS, ...getFilters() }))
   const [providers, setProviders] = useState<WatchProvider[]>([])
@@ -54,6 +89,8 @@ export default function App() {
   const [myProviders, setMyProvidersState] = useState<number[]>(() => getMyProviders())
   const [seenList, setSeenList] = useState<SeenEntry[]>(() => getSeenList())
   const [watchlist, setWatchlist] = useState<WatchlistEntry[]>(() => getWatchlist())
+  const [ignored, setIgnored] = useState<TitleRef[]>(() => getIgnored())
+  const [drawHistory, setDrawHistory] = useState<TitleRef[]>(() => getHistory())
   const [result, setResult] = useState<DetailedTitle | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -83,24 +120,34 @@ export default function App() {
     saveFilters(next)
   }
 
-  const excludeIds = useMemo(() => new Set(seenList.map((e) => e.id)), [seenList])
+  const seenIds = useMemo(() => new Set(seenList.map((e) => e.id)), [seenList])
+  const ignoredIds = useMemo(() => new Set(ignored.map((e) => e.id)), [ignored])
   const shelfLabels = useMemo(() => [...watchlist, ...seenList].map((e) => e.title), [watchlist, seenList])
+
+  function fail(message: string) {
+    setResult(null)
+    setCurtain('idle')
+    setError(message)
+  }
+
+  // Puts a title on stage: the card remounts (its curtain parts), the page scrolls to it, and it joins the history.
+  function reveal(details: DetailedTitle) {
+    setResult(details)
+    setCurtain('opening')
+    setDrawCount((count) => count + 1)
+    setDrawHistory(pushHistory(refOf(details)))
+  }
 
   async function handleDraw() {
     setLoading(true)
     setError(null)
     // The current title stays on stage while its curtain closes, instead of vanishing and collapsing the page.
     if (result) setCurtain('closing')
-    const minDuration = new Promise((resolve) => setTimeout(resolve, prefersReducedMotion() ? 0 : MIN_DRAW_MS))
-
-    function fail(message: string) {
-      setResult(null)
-      setCurtain('idle')
-      setError(message)
-    }
+    const minDuration = wait(MIN_DRAW_MS)
 
     try {
-      const effectiveExclude = new Set(filters.includeSeen ? [] : excludeIds)
+      // Set-aside titles are never offered again, even when "include already seen" is on.
+      const effectiveExclude = new Set([...(filters.includeSeen ? [] : seenIds), ...ignoredIds])
       if (result) effectiveExclude.add(result.id)
       const personName = filters.personQuery.trim()
 
@@ -126,9 +173,7 @@ export default function App() {
       }
       const details = await fetchDetails(picked.mediaType, picked.item.id)
       await minDuration
-      setResult(details)
-      setCurtain('opening')
-      setDrawCount((count) => count + 1)
+      reveal(details)
     } catch (e) {
       fail(
         e instanceof TmdbError && e.message === 'invalid_api_key'
@@ -137,6 +182,25 @@ export default function App() {
       )
     } finally {
       setLoading(false)
+    }
+  }
+
+  // "Ne plus me proposer": set the title aside and draw another one straight away.
+  function handleIgnore() {
+    if (!result) return
+    setIgnored(addIgnored(refOf(result)))
+    handleDraw()
+  }
+
+  // Brings back a title from the recent draws, with the same curtain as a draw (but no shelf roll).
+  async function handleShowFromHistory(entry: TitleRef) {
+    setError(null)
+    if (result) setCurtain('closing')
+    try {
+      const [details] = await Promise.all([fetchDetails(entry.mediaType, entry.id), wait(result ? 450 : 0)])
+      reveal(details)
+    } catch {
+      fail('Impossible de rouvrir ce titre pour le moment. Réessaie dans un instant.')
     }
   }
 
@@ -275,12 +339,13 @@ export default function App() {
                 key={id}
                 onClick={() => {
                   setTab(id)
+                  leaveLegalPage()
                   // Coming back to the draw tab must not replay the curtain on a title already revealed.
                   setCurtain('idle')
                 }}
-                aria-current={tab === id ? 'page' : undefined}
+                aria-current={tab === id && !legalRoute ? 'page' : undefined}
                 className={`py-1 transition ${
-                  tab === id
+                  tab === id && !legalRoute
                     ? 'font-semibold text-fg underline decoration-fluo decoration-2 underline-offset-[7px]'
                     : 'text-muted hover:text-fg'
                 }`}
@@ -296,7 +361,15 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6">
-        {!hasApiKey ? (
+        {legalRoute ? (
+          <LegalPage
+            route={legalRoute}
+            onBack={() => {
+              leaveLegalPage()
+              setTab('reglages')
+            }}
+          />
+        ) : !hasApiKey ? (
           <SettingsPanel
             providers={providers}
             onSaved={() => {
@@ -321,6 +394,8 @@ export default function App() {
             watchlist={watchlist}
             onRemoveFromWatchlist={handleRemoveFromWatchlist}
             onMoveWatchlistToSeen={handleMoveWatchlistToSeen}
+            ignored={ignored}
+            onRestoreIgnored={(id, mediaType) => setIgnored(removeIgnored(id, mediaType))}
           />
         ) : (
           <div className="space-y-5">
@@ -358,10 +433,18 @@ export default function App() {
                   onMarkSeen={handleMarkSeen}
                   onToggleFavorite={handleToggleFavorite}
                   onToggleWatchlist={handleToggleWatchlist}
+                  onIgnore={handleIgnore}
                   onReroll={handleDraw}
                 />
               </div>
             )}
+
+            <DrawHistory
+              entries={drawHistory.filter((e) => !(result && e.id === result.id && e.mediaType === result.mediaType))}
+              disabled={loading || curtain === 'closing'}
+              onOpen={handleShowFromHistory}
+              onClear={() => setDrawHistory(clearHistory())}
+            />
           </div>
         )}
       </main>

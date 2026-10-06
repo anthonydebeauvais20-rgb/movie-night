@@ -100,7 +100,8 @@ export interface SeenEntry {
   favorite: boolean
 }
 
-export interface WatchlistEntry {
+// A title kept in a simple list (watchlist, set aside, recent draws), with just what's needed to show it.
+export interface TitleRef {
   id: number
   mediaType: MediaType
   title: string
@@ -108,3 +109,5 @@ export interface WatchlistEntry {
   year: string
   dateAdded: string
 }
+
+export type WatchlistEntry = TitleRef

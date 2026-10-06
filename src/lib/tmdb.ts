@@ -400,8 +400,13 @@ export async function fetchDetails(mediaType: MediaType, id: number): Promise<De
   let trailerKey = pickTrailerKey(details.videos?.results ?? [])
   if (!trailerKey) {
     // Many titles have no French-language video entries; fall back to the default (English) catalog.
-    const fallback = await tmdbFetch<{ results: VideoItem[] }>(`/${mediaType}/${id}/videos`, { language: 'en-US' })
-    trailerKey = pickTrailerKey(fallback.results)
+    // The trailer is a bonus: if this extra call fails, the title is still shown, just without it.
+    try {
+      const fallback = await tmdbFetch<{ results: VideoItem[] }>(`/${mediaType}/${id}/videos`, { language: 'en-US' })
+      trailerKey = pickTrailerKey(fallback.results)
+    } catch {
+      trailerKey = null
+    }
   }
 
   return {

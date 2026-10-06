@@ -138,6 +138,14 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
         <p className="mt-2">Informations sur les films et séries : TMDB (The Movie Database).</p>
         <p className="mt-1">Disponibilité sur les plateformes : JustWatch.</p>
         <p className="mt-1" lang="en">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+        <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <a href="#/confidentialite" className="font-semibold text-fg underline underline-offset-4 hover:text-muted">
+            Politique de confidentialité
+          </a>
+          <a href="#/mentions-legales" className="font-semibold text-fg underline underline-offset-4 hover:text-muted">
+            Mentions légales
+          </a>
+        </p>
       </div>
     </div>
   )

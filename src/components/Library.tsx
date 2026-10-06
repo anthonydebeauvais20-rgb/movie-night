@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { LibraryView, MediaType, SeenEntry, WatchlistEntry } from '../types'
+import type { LibraryView, MediaType, SeenEntry, TitleRef, WatchlistEntry } from '../types'
 import { posterUrl } from '../lib/tmdb'
 import type { TitleSearchResult } from '../lib/tmdb'
 import { spineHeightFor, spineStyleFor } from '../lib/spines'
@@ -16,9 +16,11 @@ interface Props {
   watchlist: WatchlistEntry[]
   onRemoveFromWatchlist: (id: number, mediaType: string) => void
   onMoveWatchlistToSeen: (entry: WatchlistEntry) => void
+  ignored: TitleRef[]
+  onRestoreIgnored: (id: number, mediaType: string) => void
 }
 
-type Filter = 'all' | 'favorites' | 'watchlist'
+type Filter = 'all' | 'favorites' | 'watchlist' | 'ignored'
 
 const keyOf = (e: { id: number; mediaType: MediaType }) => `${e.mediaType}-${e.id}`
 
@@ -44,6 +46,8 @@ export default function Library({
   watchlist,
   onRemoveFromWatchlist,
   onMoveWatchlistToSeen,
+  ignored,
+  onRestoreIgnored,
 }: Props) {
   const [filter, setFilter] = useState<Filter>('all')
   const [view, setView] = useState<LibraryView>(getLibraryView)
@@ -63,10 +67,18 @@ export default function Library({
     setLibraryView(next)
   }
 
-  const shown: (SeenEntry | WatchlistEntry)[] =
-    filter === 'watchlist' ? watchlist : filter === 'favorites' ? entries.filter((e) => e.favorite) : entries
-  const selectedSeen = filter === 'watchlist' ? undefined : entries.find((e) => keyOf(e) === selectedKey)
+  const shown: (SeenEntry | TitleRef)[] =
+    filter === 'watchlist'
+      ? watchlist
+      : filter === 'ignored'
+        ? ignored
+        : filter === 'favorites'
+          ? entries.filter((e) => e.favorite)
+          : entries
+  const isSeenFilter = filter === 'all' || filter === 'favorites'
+  const selectedSeen = isSeenFilter ? entries.find((e) => keyOf(e) === selectedKey) : undefined
   const selectedWatch = filter === 'watchlist' ? watchlist.find((e) => keyOf(e) === selectedKey) : undefined
+  const selectedIgnored = filter === 'ignored' ? ignored.find((e) => keyOf(e) === selectedKey) : undefined
 
   function changeFilter(next: Filter) {
     setFilter(next)
@@ -77,7 +89,9 @@ export default function Library({
   const emptyMessage =
     filter === 'watchlist'
       ? 'Rien dans ta liste « À voir ». Ajoute un résultat de tirage avec le bouton « À voir plus tard ».'
-      : filter === 'favorites'
+      : filter === 'ignored'
+        ? 'Aucun titre écarté. Le lien « Ne plus me proposer » sur un tirage range le titre ici.'
+        : filter === 'favorites'
         ? `Aucun favori pour l’instant. Ouvre ${isShelf ? 'une cassette' : 'une affiche'} et ajoute-la à tes favoris.`
         : `${isShelf ? 'Ton étagère est vide' : 'Rien à afficher pour l’instant'}. Ajoute ci-dessus un titre que tu as déjà vu, ou marque un résultat de tirage comme vu.`
 
@@ -94,6 +108,9 @@ export default function Library({
         </button>
         <button onClick={() => changeFilter('watchlist')} className={chipClass(filter === 'watchlist')}>
           À voir ({watchlist.length})
+        </button>
+        <button onClick={() => changeFilter('ignored')} className={chipClass(filter === 'ignored')}>
+          Écartés ({ignored.length})
         </button>
         <div className="ml-auto flex gap-2" role="group" aria-label="Affichage">
           {VIEW_OPTIONS.map(([value, label]) => (
@@ -181,6 +198,19 @@ export default function Library({
                   setSelectedKey(null)
                 }}
               />
+            ) : selectedIgnored ? (
+              <DetailFrame key={keyOf(selectedIgnored)} entry={selectedIgnored}>
+                <p className="text-sm text-muted">Ce titre n’est plus proposé dans les tirages.</p>
+                <button
+                  onClick={() => {
+                    onRestoreIgnored(selectedIgnored.id, selectedIgnored.mediaType)
+                    setSelectedKey(null)
+                  }}
+                  className={`${primaryButtonClass} mt-3`}
+                >
+                  Remettre dans les tirages
+                </button>
+              </DetailFrame>
             ) : (
               <p className="text-sm text-muted">
                 {isShelf ? 'Touche une cassette pour la sortir du rayon.' : 'Touche une affiche pour ouvrir sa fiche.'}
@@ -214,7 +244,7 @@ function PosterTile({
   isFavorite,
   onClick,
 }: {
-  entry: SeenEntry | WatchlistEntry
+  entry: SeenEntry | TitleRef
   isSelected: boolean
   isFavorite: boolean
   onClick: () => void
@@ -259,7 +289,7 @@ function DetailFrame({
   entry,
   children,
 }: {
-  entry: SeenEntry | WatchlistEntry
+  entry: SeenEntry | TitleRef
   children: ReactNode
 }) {
   const poster = posterUrl(entry.posterPath, 'w185')

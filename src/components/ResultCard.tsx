@@ -17,6 +17,7 @@ interface Props {
   onMarkSeen: () => void
   onToggleFavorite: () => void
   onToggleWatchlist: () => void
+  onIgnore: () => void
   onReroll: () => void
 }
 
@@ -30,6 +31,7 @@ export default function ResultCard({
   onMarkSeen,
   onToggleFavorite,
   onToggleWatchlist,
+  onIgnore,
   onReroll,
 }: Props) {
   const [showTrailer, setShowTrailer] = useState(false)
@@ -218,6 +220,13 @@ export default function ResultCard({
           </button>
           <button onClick={handleShare} className="px-2 py-2 text-sm font-semibold text-fg underline underline-offset-4 hover:text-muted">
             {shareStatus === 'copied' ? 'Lien copié' : 'Partager'}
+          </button>
+          <button
+            onClick={onIgnore}
+            title="Ce titre ne sera plus proposé. Tu peux l'y remettre depuis la Bibliothèque, rayon « Écartés »."
+            className="px-2 py-2 text-sm text-muted underline underline-offset-4 hover:text-fg"
+          >
+            Ne plus me proposer
           </button>
           <button onClick={onReroll} className={`${primaryButtonClass} w-full py-3 sm:ml-auto sm:w-auto`}>
             Autre tirage

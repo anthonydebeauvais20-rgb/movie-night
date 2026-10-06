@@ -1,4 +1,4 @@
-import type { Filters, LibraryView, SeenEntry, ThemePreference, WatchlistEntry } from '../types'
+import type { Filters, LibraryView, SeenEntry, ThemePreference, TitleRef, WatchlistEntry } from '../types'
 
 // The theme key is also read by the inline script in index.html, before the app loads.
 const KEYS = {
@@ -11,6 +11,8 @@ const KEYS = {
   theme: 'movienight:theme',
   libraryView: 'movienight:libraryView',
   ratingScale: 'movienight:ratingScale',
+  ignored: 'movienight:ignored',
+  history: 'movienight:history',
 } as const
 
 export function getLibraryView(): LibraryView {
@@ -142,4 +144,52 @@ export function removeFromWatchlist(id: number, mediaType: string): WatchlistEnt
   const list = getWatchlist().filter((e) => !(e.id === id && e.mediaType === mediaType))
   saveWatchlist(list)
   return list
+}
+
+function readTitles(key: string): TitleRef[] {
+  const raw = localStorage.getItem(key)
+  if (!raw) return []
+  try {
+    return JSON.parse(raw) as TitleRef[]
+  } catch {
+    return []
+  }
+}
+
+function writeTitles(key: string, list: TitleRef[]): TitleRef[] {
+  localStorage.setItem(key, JSON.stringify(list))
+  return list
+}
+
+const sameTitle = (a: TitleRef, id: number, mediaType: string) => a.id === id && a.mediaType === mediaType
+
+// Titles the user asked never to be offered again, without marking them as seen.
+export function getIgnored(): TitleRef[] {
+  return readTitles(KEYS.ignored)
+}
+
+export function addIgnored(entry: TitleRef): TitleRef[] {
+  const list = getIgnored()
+  if (list.some((e) => sameTitle(e, entry.id, entry.mediaType))) return list
+  return writeTitles(KEYS.ignored, [entry, ...list])
+}
+
+export function removeIgnored(id: number, mediaType: string): TitleRef[] {
+  return writeTitles(KEYS.ignored, getIgnored().filter((e) => !sameTitle(e, id, mediaType)))
+}
+
+const HISTORY_SIZE = 20
+
+// The most recent draws, newest first; drawing a title again moves it back to the front.
+export function getHistory(): TitleRef[] {
+  return readTitles(KEYS.history)
+}
+
+export function pushHistory(entry: TitleRef): TitleRef[] {
+  const rest = getHistory().filter((e) => !sameTitle(e, entry.id, entry.mediaType))
+  return writeTitles(KEYS.history, [entry, ...rest].slice(0, HISTORY_SIZE))
+}
+
+export function clearHistory(): TitleRef[] {
+  return writeTitles(KEYS.history, [])
 }
