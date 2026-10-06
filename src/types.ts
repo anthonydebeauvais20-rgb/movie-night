@@ -24,6 +24,7 @@ export interface TmdbListItem {
   overview: string
   vote_average: number
   genre_ids: number[]
+  original_language?: string
 }
 
 export interface CastMember {
@@ -50,6 +51,8 @@ export interface DetailedTitle {
     flatrate: WatchProvider[]
     free: WatchProvider[]
     ads: WatchProvider[]
+    // TMDB's "where to watch" page for this title and region, listing a link to each platform.
+    link: string | null
   }
 }
 
@@ -66,6 +69,8 @@ export interface Filters {
   genreInclude: string[]
   genreExclude: string[]
   genreMatch: GenreMatch
+  languageInclude: string[]
+  languageExclude: string[]
   recent: Recency
   yearMin: number
   yearMax: number
@@ -89,6 +94,7 @@ export interface SeenEntry {
   posterPath: string | null
   year: string
   dateAdded: string
+  // Out of 10, in whole points: each of the 5 stars is worth 2, a half star 1.
   rating: number | null
   comment: string
   favorite: boolean

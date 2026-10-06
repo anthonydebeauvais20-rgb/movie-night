@@ -26,6 +26,8 @@ const DEFAULT_FILTERS: Filters = {
   genreInclude: [],
   genreExclude: [],
   genreMatch: 'any',
+  languageInclude: [],
+  languageExclude: [],
   recent: 'any',
   yearMin: 1970,
   yearMax: new Date().getFullYear(),

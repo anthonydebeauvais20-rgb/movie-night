@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { genreLabelsFor } from '../lib/tmdb'
+import { genreLabelsFor, LANGUAGES } from '../lib/tmdb'
 import { chipClass, inputClass } from '../lib/ui'
 import type { Filters, GenreMatch, Recency } from '../types'
 
@@ -45,6 +45,77 @@ function Section({ title, summary, children }: { title: string; summary: ReactNo
   )
 }
 
+// Chips that cycle neutral -> wanted -> blocked -> neutral, shared by genres and languages.
+function TriStateChips({
+  labels,
+  include,
+  exclude,
+  onChange,
+}: {
+  labels: string[]
+  include: string[]
+  exclude: string[]
+  onChange: (include: string[], exclude: string[]) => void
+}) {
+  function cycle(label: string) {
+    const without = (list: string[]) => list.filter((l) => l !== label)
+    if (include.includes(label)) onChange(without(include), [...exclude, label])
+    else if (exclude.includes(label)) onChange(include, without(exclude))
+    else onChange([...include, label], exclude)
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {labels.map((label) => {
+        const state = include.includes(label) ? 'souhaité' : exclude.includes(label) ? 'exclu' : 'indifférent'
+        return (
+          <button
+            key={label}
+            onClick={() => cycle(label)}
+            aria-label={`${label} : ${state}`}
+            className={`rounded-full border px-3 py-1 text-xs transition ${
+              state === 'souhaité'
+                ? 'border-action bg-action text-on-action'
+                : state === 'exclu'
+                  ? 'border-dashed border-line text-muted line-through decoration-fluo decoration-2'
+                  : 'border-line/40 text-fg hover:bg-tint'
+            }`}
+          >
+            {state === 'souhaité' && '+ '}
+            {state === 'exclu' && '− '}
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function triStateSummary(include: string[], exclude: string[], whenEmpty: string): ReactNode {
+  if (include.length + exclude.length === 0) return whenEmpty
+  return (
+    <>
+      {include.length > 0 && <span className="font-semibold text-fg">{include.join(', ')}</span>}
+      {exclude.length > 0 && <span className={include.length > 0 ? 'ml-2' : ''}>sans {exclude.join(', ')}</span>}
+    </>
+  )
+}
+
+function TriStateFooter({ hint, onClear }: { hint: string; onClear: (() => void) | null }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-xs text-muted">{hint}</p>
+      {onClear && (
+        <button onClick={onClear} className="shrink-0 text-xs font-semibold text-fg underline underline-offset-4 hover:text-muted">
+          Tout effacer
+        </button>
+      )}
+    </div>
+  )
+}
+
+const LANGUAGE_LABELS = LANGUAGES.map((l) => l.label)
+
 export default function FilterPanel({ filters, onChange }: Props) {
   const genreLabels = genreLabelsFor(filters.mediaType)
   const hasGenreSelection = filters.genreInclude.length + filters.genreExclude.length > 0
@@ -61,28 +132,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
     })
   }
 
-  // Tap cycles a genre: neutral -> wanted -> blocked -> neutral.
-  function cycleGenre(label: string) {
-    const without = (list: string[]) => list.filter((g) => g !== label)
-    if (filters.genreInclude.includes(label)) {
-      onChange({ ...filters, genreInclude: without(filters.genreInclude), genreExclude: [...filters.genreExclude, label] })
-    } else if (filters.genreExclude.includes(label)) {
-      onChange({ ...filters, genreExclude: without(filters.genreExclude) })
-    } else {
-      onChange({ ...filters, genreInclude: [...filters.genreInclude, label] })
-    }
-  }
-
-  const genreSummary = hasGenreSelection ? (
-    <>
-      {filters.genreInclude.length > 0 && <span className="font-semibold text-fg">{filters.genreInclude.join(', ')}</span>}
-      {filters.genreExclude.length > 0 && (
-        <span className={filters.genreInclude.length > 0 ? 'ml-2' : ''}>sans {filters.genreExclude.join(', ')}</span>
-      )}
-    </>
-  ) : (
-    'Tous les genres'
-  )
+  const hasLanguageSelection = filters.languageInclude.length + filters.languageExclude.length > 0
 
   const periodSummary = isRecent
     ? RECENCY_OPTIONS.find(([value]) => value === filters.recent)?.[1]
@@ -109,45 +159,17 @@ export default function FilterPanel({ filters, onChange }: Props) {
         ))}
       </div>
 
-      <Section title="Genres" summary={genreSummary}>
-        <div className="flex flex-wrap gap-2">
-          {genreLabels.map((label) => {
-            const state = filters.genreInclude.includes(label)
-              ? 'souhaité'
-              : filters.genreExclude.includes(label)
-                ? 'exclu'
-                : 'indifférent'
-            return (
-              <button
-                key={label}
-                onClick={() => cycleGenre(label)}
-                aria-label={`${label} : ${state}`}
-                className={`rounded-full border px-3 py-1 text-xs transition ${
-                  state === 'souhaité'
-                    ? 'border-action bg-action text-on-action'
-                    : state === 'exclu'
-                      ? 'border-dashed border-line text-muted line-through decoration-fluo decoration-2'
-                      : 'border-line/40 text-fg hover:bg-tint'
-                }`}
-              >
-                {state === 'souhaité' && '+ '}
-                {state === 'exclu' && '− '}
-                {label}
-              </button>
-            )
-          })}
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted">Touche un genre pour le souhaiter, touche encore pour l'exclure.</p>
-          {hasGenreSelection && (
-            <button
-              onClick={() => onChange({ ...filters, genreInclude: [], genreExclude: [] })}
-              className="shrink-0 text-xs font-semibold text-fg underline underline-offset-4 hover:text-muted"
-            >
-              Tout effacer
-            </button>
-          )}
-        </div>
+      <Section title="Genres" summary={triStateSummary(filters.genreInclude, filters.genreExclude, 'Tous les genres')}>
+        <TriStateChips
+          labels={genreLabels}
+          include={filters.genreInclude}
+          exclude={filters.genreExclude}
+          onChange={(genreInclude, genreExclude) => onChange({ ...filters, genreInclude, genreExclude })}
+        />
+        <TriStateFooter
+          hint="Touche un genre pour le souhaiter, touche encore pour l'exclure."
+          onClear={hasGenreSelection ? () => onChange({ ...filters, genreInclude: [], genreExclude: [] }) : null}
+        />
         {filters.genreInclude.length >= 2 && (
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
             <span>Le film doit avoir :</span>
@@ -162,6 +184,22 @@ export default function FilterPanel({ filters, onChange }: Props) {
             ))}
           </div>
         )}
+      </Section>
+
+      <Section
+        title="Langue originale"
+        summary={triStateSummary(filters.languageInclude, filters.languageExclude, 'Toutes les langues')}
+      >
+        <TriStateChips
+          labels={LANGUAGE_LABELS}
+          include={filters.languageInclude}
+          exclude={filters.languageExclude}
+          onChange={(languageInclude, languageExclude) => onChange({ ...filters, languageInclude, languageExclude })}
+        />
+        <TriStateFooter
+          hint="La langue dans laquelle le film ou la série a été tourné. Touche pour la souhaiter, encore pour l'exclure."
+          onClear={hasLanguageSelection ? () => onChange({ ...filters, languageInclude: [], languageExclude: [] }) : null}
+        />
       </Section>
 
       <Section

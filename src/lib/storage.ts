@@ -10,6 +10,7 @@ const KEYS = {
   watchlist: 'movienight:watchlist',
   theme: 'movienight:theme',
   libraryView: 'movienight:libraryView',
+  ratingScale: 'movienight:ratingScale',
 } as const
 
 export function getLibraryView(): LibraryView {
@@ -48,12 +49,21 @@ export function setRegion(region: string): void {
 
 export function getSeenList(): SeenEntry[] {
   const raw = localStorage.getItem(KEYS.seen)
-  if (!raw) return []
-  try {
-    return JSON.parse(raw) as SeenEntry[]
-  } catch {
-    return []
+  let list: SeenEntry[] = []
+  if (raw) {
+    try {
+      list = JSON.parse(raw) as SeenEntry[]
+    } catch {
+      return []
+    }
   }
+  // Ratings used to be 1–5 whole stars; they are now out of 10 (half stars). Convert saved lists once.
+  if (localStorage.getItem(KEYS.ratingScale) !== '10') {
+    list = list.map((e) => (e.rating ? { ...e, rating: e.rating * 2 } : e))
+    if (raw) saveSeenList(list)
+    localStorage.setItem(KEYS.ratingScale, '10')
+  }
+  return list
 }
 
 export function saveSeenList(list: SeenEntry[]): void {

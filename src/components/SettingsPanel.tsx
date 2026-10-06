@@ -130,6 +130,13 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
           ))}
         </div>
       </div>
+
+      <div className="mt-6 border-t border-line/25 pt-5 text-xs text-muted">
+        <p className="text-sm font-semibold text-fg">Crédits</p>
+        <p className="mt-1">Informations sur les films et séries : TMDB (The Movie Database).</p>
+        <p className="mt-1">Disponibilité sur les plateformes : JustWatch.</p>
+        <p className="mt-1" lang="en">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+      </div>
     </div>
   )
 }

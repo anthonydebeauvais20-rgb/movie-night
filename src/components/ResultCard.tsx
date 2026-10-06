@@ -138,17 +138,32 @@ export default function ResultCard({
             <div className="mt-4">
               {providers.length > 0 ? (
                 <>
-                  <p className="mb-2 text-sm text-muted">Disponible sur</p>
+                  <p className="mb-2 flex items-baseline justify-between gap-3 text-sm text-muted">
+                    Disponible sur
+                    <span className="text-[11px] text-muted/80">Source : JustWatch</span>
+                  </p>
                   <div className="flex flex-wrap gap-2">
-                    {providers.map((p) => (
-                      <img
-                        key={p.provider_id}
-                        src={providerLogoUrl(p.logo_path, 'w92')}
-                        alt={p.provider_name}
-                        title={p.provider_name}
-                        className="h-10 w-10 rounded-md"
-                      />
-                    ))}
+                    {providers.map((p) => {
+                      const logo = (
+                        <img src={providerLogoUrl(p.logo_path, 'w92')} alt={p.provider_name} className="h-10 w-10 rounded-md" />
+                      )
+                      return title.providers.link ? (
+                        <a
+                          key={p.provider_id}
+                          href={title.providers.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          title={`Regarder sur ${p.provider_name}`}
+                          className="rounded-md transition hover:brightness-110 hover:ring-2 hover:ring-fluo"
+                        >
+                          {logo}
+                        </a>
+                      ) : (
+                        <span key={p.provider_id} title={p.provider_name}>
+                          {logo}
+                        </span>
+                      )
+                    })}
                   </div>
                 </>
               ) : (

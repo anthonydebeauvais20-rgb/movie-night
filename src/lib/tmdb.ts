@@ -104,6 +104,34 @@ function genreCriteria(filters: Filters, mediaType: MediaType): GenreCriteria | 
   }
 }
 
+/** Original-language chips. One chip can cover several ISO 639-1 codes (TMDB tags Cantonese as "cn"). */
+export const LANGUAGES: { label: string; codes: string[] }[] = [
+  { label: 'Français', codes: ['fr'] },
+  { label: 'Anglais', codes: ['en'] },
+  { label: 'Espagnol', codes: ['es'] },
+  { label: 'Italien', codes: ['it'] },
+  { label: 'Allemand', codes: ['de'] },
+  { label: 'Portugais', codes: ['pt'] },
+  { label: 'Langues nordiques', codes: ['da', 'sv', 'no', 'nb', 'fi', 'is'] },
+  { label: 'Turc', codes: ['tr'] },
+  { label: 'Coréen', codes: ['ko'] },
+  { label: 'Japonais', codes: ['ja'] },
+  { label: 'Chinois', codes: ['zh', 'cn'] },
+  { label: 'Langues de l’Inde', codes: ['hi', 'ta', 'te', 'ml', 'kn', 'bn', 'mr'] },
+]
+
+function languageCodes(labels: string[]): string[] {
+  return labels.flatMap((label) => LANGUAGES.find((l) => l.label === label)?.codes ?? [])
+}
+
+// TMDB ignores without_original_language, so excluded languages are filtered out of each results page instead.
+function passesLanguage(item: TmdbListItem, filters: Filters): boolean {
+  const language = item.original_language ?? ''
+  const wanted = languageCodes(filters.languageInclude)
+  if (wanted.length > 0 && !wanted.includes(language)) return false
+  return !languageCodes(filters.languageExclude).includes(language)
+}
+
 const RECENT_DAYS = { '7d': 7, '30d': 30, '90d': 90 } as const
 
 function toLocalIsoDate(date: Date): string {
@@ -149,6 +177,7 @@ async function discover(
     // "|" = any of the genres, "," = all of them at once.
     with_genres: criteria.include.length ? criteria.include.join(criteria.match === 'all' ? ',' : '|') : undefined,
     without_genres: criteria.exclude.length ? criteria.exclude.join(',') : undefined,
+    with_original_language: filters.languageInclude.length ? languageCodes(filters.languageInclude).join('|') : undefined,
     [`${dateField}.gte`]: from,
     [`${dateField}.lte`]: to,
     // Fresh releases have few votes (only 5 films of the last week reach 20), so vote thresholds would empty the pool.
@@ -188,7 +217,7 @@ export async function pickRandomTitle(
     triedPages.add(page)
 
     const data = page === 1 ? firstPage : await discover(mediaType, filters, page, criteria, providerIds)
-    const candidates = data.results.filter((r) => !excludeIds.has(r.id))
+    const candidates = data.results.filter((r) => !excludeIds.has(r.id) && passesLanguage(r, filters))
     if (candidates.length > 0) {
       return candidates[Math.floor(Math.random() * candidates.length)]
     }
@@ -295,6 +324,7 @@ export async function pickRandomFromPerson(
 
     if (filters.mediaType !== 'both' && c.media_type !== filters.mediaType) return false
     if (excludeIds.has(c.id)) return false
+    if (!passesLanguage(c, filters)) return false
 
     const date = c.release_date || c.first_air_date || ''
     if (isRecent) {
@@ -360,7 +390,9 @@ export async function fetchDetails(mediaType: MediaType, id: number): Promise<De
     number_of_seasons?: number
     credits: { cast: CastMember[] }
     videos: { results: VideoItem[] }
-    'watch/providers': { results: Record<string, { flatrate?: WatchProvider[]; free?: WatchProvider[]; ads?: WatchProvider[] }> }
+    'watch/providers': {
+      results: Record<string, { link?: string; flatrate?: WatchProvider[]; free?: WatchProvider[]; ads?: WatchProvider[] }>
+    }
   }>(`/${mediaType}/${id}`, { append_to_response: 'credits,videos,watch/providers' })
 
   const regionProviders = details['watch/providers']?.results?.[region]
@@ -390,6 +422,7 @@ export async function fetchDetails(mediaType: MediaType, id: number): Promise<De
       flatrate: regionProviders?.flatrate ?? [],
       free: regionProviders?.free ?? [],
       ads: regionProviders?.ads ?? [],
+      link: regionProviders?.link ?? null,
     },
   }
 }

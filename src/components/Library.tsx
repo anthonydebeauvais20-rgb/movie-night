@@ -289,6 +289,47 @@ function DetailFrame({
   )
 }
 
+// 5 stars, out of 10: each star is 2 points. Tapping a star fills it, tapping it again halves it, a third tap clears.
+function nextRating(current: number | null, star: number): number | null {
+  if (current === star * 2) return star * 2 - 1
+  if (current === star * 2 - 1) return null
+  return star * 2
+}
+
+function StarRating({ value, onChange }: { value: number | null; onChange: (rating: number | null) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex" role="group" aria-label="Ta note sur 10">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const fill = value === null ? 0 : value >= star * 2 ? 1 : value === star * 2 - 1 ? 0.5 : 0
+          return (
+            <button
+              key={star}
+              onClick={() => onChange(nextRating(value, star))}
+              aria-label={`${star} étoile${star > 1 ? 's' : ''} (${star * 2}/10)`}
+              className="relative px-0.5 text-2xl leading-none text-ink/25"
+            >
+              ★
+              {fill > 0 && (
+                <span
+                  className="absolute inset-y-0 left-0.5 overflow-hidden text-ink"
+                  style={{ width: fill === 1 ? 'calc(100% - 4px)' : 'calc((100% - 4px) / 2)' }}
+                  aria-hidden="true"
+                >
+                  ★
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      <span className="text-sm text-muted" aria-live="polite">
+        {value === null ? 'Pas encore noté' : `${value}/10`}
+      </span>
+    </div>
+  )
+}
+
 function SeenDetail({
   entry,
   onUpdate,
@@ -301,19 +342,7 @@ function SeenDetail({
   return (
     <DetailFrame entry={entry}>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex" role="group" aria-label="Ta note">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              onClick={() => onUpdate({ ...entry, rating: entry.rating === n ? null : n })}
-              aria-label={`${n} sur 5`}
-              aria-pressed={entry.rating === n}
-              className={`px-0.5 text-xl leading-none ${entry.rating && n <= entry.rating ? 'text-ink' : 'text-ink/25'}`}
-            >
-              ★
-            </button>
-          ))}
-        </div>
+        <StarRating value={entry.rating} onChange={(rating) => onUpdate({ ...entry, rating })} />
         <button
           onClick={() => onUpdate({ ...entry, favorite: !entry.favorite })}
           aria-pressed={entry.favorite}
