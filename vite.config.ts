@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'favicon.svg', 'app-icon.svg', 'apple-touch-icon-180x180.png'],
+      includeAssets: ['favicon.ico', 'favicon.svg', 'app-icon.svg', 'apple-touch-icon-180x180.png', 'tmdb-logo.svg'],
       manifest: {
         name: 'Movie Night',
         short_name: 'Movie Night',
