@@ -5,6 +5,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages serves the site under /<repo>/; the deploy workflow sets BASE_PATH accordingly.
+  base: process.env.BASE_PATH ?? '/',
   plugins: [
     react(),
     tailwindcss(),
@@ -19,7 +21,6 @@ export default defineConfig({
         theme_color: '#0a231c',
         background_color: '#0a231c',
         display: 'standalone',
-        start_url: '/',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

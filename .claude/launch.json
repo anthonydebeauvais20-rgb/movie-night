@@ -26,6 +26,12 @@
       "runtimeArgs": ["run", "preview"],
       "port": 4173,
       "autoPort": true
+    },
+    {
+      "name": "movie-night-pages",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview", "--", "--base", "/movie-night/", "--port", "4180", "--strictPort"],
+      "port": 4180
     }
   ]
 }
