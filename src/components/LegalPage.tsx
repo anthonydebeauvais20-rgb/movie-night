@@ -8,11 +8,20 @@ interface Props {
   onBack: () => void
 }
 
-const UPDATED = '6 octobre 2026'
+const UPDATED = '13 octobre 2026'
+const CONTACT_EMAIL = 'anthodu95@gmail.com'
 
 // Something still to fill in or confirm before the app is opened to other people.
 function Todo({ children }: { children: ReactNode }) {
   return <span className="rounded-sm border border-dashed border-line bg-tint px-1 text-fg">{children}</span>
+}
+
+function Contact() {
+  return (
+    <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-4">
+      {CONTACT_EMAIL}
+    </a>
+  )
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -29,8 +38,8 @@ function Privacy() {
     <>
       <Section title="Qui s’occupe de tes données">
         <p>
-          Movie Night est un projet personnel et non commercial de <Todo>Prénom Nom</Todo>. Pour toute question :{' '}
-          <Todo>adresse e-mail de contact</Todo>.
+          Movie Night est un projet personnel et non commercial, édité par un particulier. Pour toute question :{' '}
+          <Contact />.
         </p>
       </Section>
 
@@ -58,8 +67,8 @@ function Privacy() {
       <Section title="Qui d’autre y a accès">
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            Supabase, qui héberge la base de données et gère la connexion, sur des serveurs situés dans l’Union
-            européenne <Todo>région exacte à confirmer</Todo>.
+            Supabase, qui héberge la base de données et gère la connexion, sur des serveurs situés à Paris, dans
+            l’Union européenne.
           </li>
           <li>GitHub (GitHub Pages), qui héberge le site et garde des journaux techniques, comme l’adresse IP, pour sa sécurité.</li>
           <li>Google, seulement si tu choisis de te connecter avec ton compte Google.</li>
@@ -72,11 +81,12 @@ function Privacy() {
 
       <Section title="Combien de temps">
         <p>
-          Tant que ton compte existe. Si tu le supprimes, toutes tes données sont effacées{' '}
-          <Todo>délai à préciser, par exemple sous 30 jours, sauvegardes comprises</Todo>.
+          Tant que ton compte existe. Si tu le supprimes, toutes tes données sont effacées sous 30 jours, sauvegardes
+          comprises.
         </p>
         <p>
-          <Todo>À décider : supprimer les comptes inactifs depuis 3 ans, après un e-mail de prévenance.</Todo>
+          Un compte resté inactif pendant 2 ans est supprimé, après un e-mail pour te prévenir et te laisser le temps de
+          t’y reconnecter.
         </p>
       </Section>
 
@@ -92,7 +102,7 @@ function Privacy() {
         <p>
           Tu peux à tout moment consulter, corriger, télécharger ou supprimer tes données, et t’opposer à leur
           utilisation. Le téléchargement et la suppression se feront depuis Réglages <Todo>à venir avec les comptes</Todo>
-          ; pour le reste, écris à <Todo>adresse e-mail de contact</Todo>.
+          ; pour le reste, écris à <Contact />.
         </p>
         <p>
           Si tu estimes que tes droits ne sont pas respectés, tu peux t’adresser à la CNIL (
@@ -105,7 +115,7 @@ function Privacy() {
 
       <Section title="Âge">
         <p>
-          Movie Night s’adresse aux personnes de 15 ans et plus. <Todo>à valider</Todo>
+          Movie Night s’adresse aux personnes de 15 ans et plus.
         </p>
       </Section>
 
@@ -121,14 +131,9 @@ function LegalNotice() {
     <>
       <Section title="Éditeur">
         <p>
-          Movie Night est un site personnel, édité à titre non professionnel par <Todo>Prénom Nom</Todo>. Contact :{' '}
-          <Todo>adresse e-mail de contact</Todo>.
-        </p>
-        <p>
-          <Todo>
-            Option prévue par la loi pour un particulier : ne publier ici que le nom de l’hébergeur, à qui tes coordonnées
-            sont alors confiées.
-          </Todo>
+          Movie Night est un site personnel, édité à titre non professionnel par un particulier qui a choisi de rester
+          anonyme, comme la loi pour la confiance dans l’économie numérique le permet. Ses coordonnées sont connues de
+          l’hébergeur indiqué ci-dessous. Contact : <Contact />.
         </p>
       </Section>
 
@@ -140,7 +145,7 @@ function LegalNotice() {
 
       <Section title="Hébergement des données">
         <p>
-          Supabase, Inc. <Todo>adresse à vérifier</Todo>, avec des serveurs situés dans l’Union européenne.
+          Supabase, Inc. <Todo>adresse à vérifier</Todo>, avec des serveurs situés à Paris, dans l’Union européenne.
         </p>
       </Section>
 
