@@ -98,16 +98,16 @@ function Privacy() {
       <Section title="Sur ton appareil">
         <p>
           L’app garde une copie de tes données dans ton navigateur (stockage local) pour aller plus vite et fonctionner
-          sans connexion. Il n’y a ni cookies publicitaires ni mesure d’audience : aucun bandeau de consentement n’est donc
-          nécessaire.
+          sans connexion. Quand tu te déconnectes, cette copie est effacée de l’appareil. Il n’y a ni cookies publicitaires
+          ni mesure d’audience : aucun bandeau de consentement n’est donc nécessaire.
         </p>
       </Section>
 
       <Section title="Tes droits">
         <p>
           Tu peux à tout moment consulter, corriger, télécharger ou supprimer tes données, et t’opposer à leur
-          utilisation. Le téléchargement et la suppression se feront depuis Réglages <Todo>à venir avec les comptes</Todo>
-          ; pour le reste, écris à <Contact />.
+          utilisation. Le téléchargement et la suppression se font depuis Réglages, rubrique Compte ; pour le reste, écris à{' '}
+          <Contact />.
         </p>
         <p>
           Si tu estimes que tes droits ne sont pas respectés, tu peux t’adresser à la CNIL (

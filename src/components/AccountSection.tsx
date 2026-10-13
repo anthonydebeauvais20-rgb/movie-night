@@ -2,10 +2,22 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { appUrl, supabase } from '../lib/supabase'
+import { exportAccountData } from '../lib/sync'
+import type { SyncStatus } from '../lib/useSync'
 import { inputClass, primaryButtonClass, secondaryButtonClass } from '../lib/ui'
 
 interface Props {
   session: Session | null
+  syncStatus: SyncStatus
+  onSignOut: () => Promise<void>
+  onAccountDeleted: () => Promise<void>
+}
+
+const SYNC_LABELS: Partial<Record<SyncStatus, string>> = {
+  syncing: 'Synchronisation…',
+  synced: 'Ta bibliothèque et tes réglages sont à jour sur tous tes appareils.',
+  offline: 'Pas de connexion au serveur pour l’instant : tes changements partiront dès qu’elle reviendra.',
+  choosing: 'En attente de ton choix pour les titres de cet appareil (en haut de la page).',
 }
 
 type Step = { kind: 'email' } | { kind: 'code'; email: string }
@@ -135,12 +147,12 @@ function SignIn() {
   )
 }
 
-function SignedIn({ session }: { session: Session }) {
+function SignedIn({ session, syncStatus, onSignOut, onAccountDeleted }: Props & { session: Session }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // One account can gather several ways in (e-mail code and Google, when they share the address).
-  const providers: string[] = session.user.app_metadata.providers ?? [session.user.app_metadata.provider]
+  const providers: string[] = session.user.app_metadata.providers ?? [session.user.app_metadata.provider ?? 'email']
   const ways = providers.map((p) => (p === 'google' ? 'Google' : p === 'email' ? 'code par e-mail' : p)).join(' ou ')
 
   async function deleteAccount() {
@@ -152,7 +164,21 @@ function SignedIn({ session }: { session: Session }) {
       setError('La suppression a échoué. Réessaie dans un instant.')
       return
     }
-    await supabase.auth.signOut({ scope: 'local' })
+    await onAccountDeleted()
+  }
+
+  async function downloadData() {
+    setError(null)
+    try {
+      const blob = await exportAccountData(session.user.email)
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `movie-night-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`
+      link.click()
+      URL.revokeObjectURL(link.href)
+    } catch {
+      setError('Le téléchargement a échoué. Réessaie dans un instant.')
+    }
   }
 
   return (
@@ -161,9 +187,21 @@ function SignedIn({ session }: { session: Session }) {
         Connecté·e avec <span className="font-semibold">{session.user.email}</span>
       </p>
       <p className="mt-0.5 text-xs text-muted">Connexion possible par {ways}.</p>
+      {SYNC_LABELS[syncStatus] && <p className="mt-2 text-xs text-fg">{SYNC_LABELS[syncStatus]}</p>}
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={() => supabase.auth.signOut()} className={secondaryButtonClass}>
+        <button
+          type="button"
+          onClick={() => {
+            setBusy(true)
+            onSignOut()
+          }}
+          disabled={busy}
+          className={secondaryButtonClass}
+        >
           Me déconnecter
+        </button>
+        <button type="button" onClick={downloadData} className={secondaryButtonClass}>
+          Télécharger mes données
         </button>
         {!confirmDelete && (
           <button
@@ -179,8 +217,8 @@ function SignedIn({ session }: { session: Session }) {
       {confirmDelete && (
         <div className="mt-3 rounded-sm border border-dashed border-line bg-tint px-3 py-3 text-sm text-fg">
           <p>
-            Ton compte et tout ce qui est enregistré en ligne seront effacés définitivement. Ce qui est sur cet appareil y
-            restera.
+            Ton compte et toute ta bibliothèque seront effacés définitivement, en ligne comme sur cet appareil. Pense à
+            télécharger tes données avant si tu veux les garder.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" onClick={deleteAccount} disabled={busy} className={primaryButtonClass}>
@@ -198,11 +236,11 @@ function SignedIn({ session }: { session: Session }) {
   )
 }
 
-export default function AccountSection({ session }: Props) {
+export default function AccountSection(props: Props) {
   return (
     <div className="mb-6 border-b border-line/25 pb-5">
       <p className="text-sm font-semibold text-fg">Compte</p>
-      {session ? <SignedIn session={session} /> : <SignIn />}
+      {props.session ? <SignedIn {...props} session={props.session} /> : <SignIn />}
     </div>
   )
 }

@@ -13,7 +13,26 @@ const KEYS = {
   ratingScale: 'movienight:ratingScale',
   ignored: 'movienight:ignored',
   history: 'movienight:history',
+  sync: 'movienight:sync',
 } as const
+
+// What an account carries from device to device; the theme and the library view stay per device.
+const ACCOUNT_KEYS = [KEYS.seen, KEYS.watchlist, KEYS.ignored, KEYS.history, KEYS.filters, KEYS.region, KEYS.myProviders]
+
+// After signing out or deleting the account, nothing of it stays on this device.
+export function clearAccountData(): void {
+  for (const key of ACCOUNT_KEYS) localStorage.removeItem(key)
+  localStorage.removeItem(KEYS.sync)
+}
+
+export function getSyncSnapshot(): string | null {
+  return localStorage.getItem(KEYS.sync)
+}
+
+export function setSyncSnapshot(raw: string | null): void {
+  if (raw === null) localStorage.removeItem(KEYS.sync)
+  else localStorage.setItem(KEYS.sync, raw)
+}
 
 export function getLibraryView(): LibraryView {
   return localStorage.getItem(KEYS.libraryView) === 'posters' ? 'posters' : 'shelf'
@@ -125,7 +144,7 @@ export function getWatchlist(): WatchlistEntry[] {
   }
 }
 
-function saveWatchlist(list: WatchlistEntry[]): void {
+export function saveWatchlist(list: WatchlistEntry[]): void {
   localStorage.setItem(KEYS.watchlist, JSON.stringify(list))
 }
 
@@ -175,6 +194,10 @@ export function removeIgnored(id: number, mediaType: string): TitleRef[] {
   return writeTitles(KEYS.ignored, getIgnored().filter((e) => !sameTitle(e, id, mediaType)))
 }
 
+export function saveIgnored(list: TitleRef[]): void {
+  writeTitles(KEYS.ignored, list)
+}
+
 const HISTORY_SIZE = 20
 
 // The most recent draws, newest first; drawing a title again moves it back to the front.
@@ -189,4 +212,18 @@ export function pushHistory(entry: TitleRef): TitleRef[] {
 
 export function clearHistory(): TitleRef[] {
   return writeTitles(KEYS.history, [])
+}
+
+export function saveHistory(list: TitleRef[]): void {
+  writeTitles(KEYS.history, list.slice(0, HISTORY_SIZE))
+}
+
+// The stored filters as they are (possibly partial), for syncing them untouched.
+export function getRawFilters(): Partial<Filters> {
+  return getFilters() ?? {}
+}
+
+export function saveRawFilters(filters: Partial<Filters>): void {
+  if (Object.keys(filters).length === 0) localStorage.removeItem(KEYS.filters)
+  else localStorage.setItem(KEYS.filters, JSON.stringify(filters))
 }

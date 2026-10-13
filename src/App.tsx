@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import DeviceTitlesPrompt from './components/DeviceTitlesPrompt'
 import DrawHistory from './components/DrawHistory'
 import FilterPanel from './components/FilterPanel'
 import LegalPage, { LEGAL_ROUTES } from './components/LegalPage'
@@ -9,6 +10,7 @@ import type { CurtainState } from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
 import Shelf from './components/Shelf'
 import { useSession } from './lib/useSession'
+import { useSync } from './lib/useSync'
 import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson } from './lib/tmdb'
 import type { TitleSearchResult } from './lib/tmdb'
 import {
@@ -98,6 +100,22 @@ export default function App() {
   // Bumped on every successful draw: remounts the card (so its curtain parts) and triggers the scroll to it.
   const [drawCount, setDrawCount] = useState(0)
   const stageRef = useRef<HTMLDivElement>(null)
+
+  // The sync rewrote this device's copy (another device's changes, a sign-out…): show the new data.
+  function reloadFromStorage() {
+    setSeenList(getSeenList())
+    setWatchlist(getWatchlist())
+    setIgnored(getIgnored())
+    setDrawHistory(getHistory())
+    setFiltersState({ ...DEFAULT_FILTERS, ...getFilters() })
+    setMyProvidersState(getMyProviders())
+  }
+  const sync = useSync(session?.user.id ?? null, reloadFromStorage)
+  const { schedulePush } = sync
+
+  useEffect(() => {
+    schedulePush()
+  }, [seenList, watchlist, ignored, drawHistory, filters, myProviders, schedulePush])
 
   useEffect(() => {
     if (drawCount === 0) return
@@ -356,6 +374,9 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6">
+        {sync.status === 'choosing' && (
+          <DeviceTitlesPrompt count={sync.deviceTitles} onChoose={sync.chooseDeviceTitles} />
+        )}
         {legalRoute ? (
           <LegalPage
             route={legalRoute}
@@ -368,8 +389,13 @@ export default function App() {
           <SettingsPanel
             providers={providers}
             session={session}
+            syncStatus={sync.status}
+            onSignOut={sync.signOut}
+            onAccountDeleted={sync.forgetAccount}
             onSaved={() => {
               setMyProvidersState(getMyProviders())
+              // The country is not part of the app's state, so its change is announced here.
+              schedulePush()
               setTab('tirage')
             }}
           />
