@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import type { Session } from '@supabase/supabase-js'
+import AccountSection from './AccountSection'
 import {
   getMyProviders,
   getRegion,
@@ -15,6 +17,7 @@ import type { ThemePreference, WatchProvider } from '../types'
 interface Props {
   onSaved: () => void
   providers?: WatchProvider[]
+  session: Session | null
 }
 
 const THEME_OPTIONS: [ThemePreference, string][] = [
@@ -23,7 +26,7 @@ const THEME_OPTIONS: [ThemePreference, string][] = [
   ['dark', 'Sombre'],
 ]
 
-export default function SettingsPanel({ onSaved, providers = [] }: Props) {
+export default function SettingsPanel({ onSaved, providers = [], session }: Props) {
   const [region, setRegionState] = useState(getRegion())
   const [myProviders, setMyProvidersState] = useState<number[]>(getMyProviders())
   const [theme, setTheme] = useState<ThemePreference>(getThemePreference())
@@ -47,9 +50,11 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
 
   return (
     <div className="mx-auto max-w-lg rounded-sm border border-line bg-paper p-6">
-      <h2 className="font-poster text-2xl text-fg">Réglages</h2>
+      <h2 className="mb-5 font-poster text-2xl text-fg">Réglages</h2>
 
-      <label className="mt-5 block text-sm font-semibold text-fg">
+      <AccountSection session={session} />
+
+      <label className="block text-sm font-semibold text-fg">
         Pays (disponibilité des plateformes de streaming)
         <select value={region} onChange={(e) => setRegionState(e.target.value)} className={`${inputClass} font-normal`}>
           <option value="FR">France</option>

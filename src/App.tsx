@@ -8,6 +8,7 @@ import ResultCard from './components/ResultCard'
 import type { CurtainState } from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
 import Shelf from './components/Shelf'
+import { useSession } from './lib/useSession'
 import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson } from './lib/tmdb'
 import type { TitleSearchResult } from './lib/tmdb'
 import {
@@ -66,6 +67,7 @@ const refOf = (t: DetailedTitle): TitleRef => ({
 const legalRouteOf = (hash: string): LegalRoute | null => (LEGAL_ROUTES.includes(hash as LegalRoute) ? (hash as LegalRoute) : null)
 
 export default function App() {
+  const { session } = useSession()
   const [tab, setTab] = useState<Tab>('tirage')
   const [legalRoute, setLegalRoute] = useState<LegalRoute | null>(() => legalRouteOf(window.location.hash))
 
@@ -365,6 +367,7 @@ export default function App() {
         ) : tab === 'reglages' ? (
           <SettingsPanel
             providers={providers}
+            session={session}
             onSaved={() => {
               setMyProvidersState(getMyProviders())
               setTab('tirage')
