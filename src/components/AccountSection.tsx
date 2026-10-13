@@ -139,7 +139,9 @@ function SignedIn({ session }: { session: Session }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const viaGoogle = session.user.app_metadata.provider === 'google'
+  // One account can gather several ways in (e-mail code and Google, when they share the address).
+  const providers: string[] = session.user.app_metadata.providers ?? [session.user.app_metadata.provider]
+  const ways = providers.map((p) => (p === 'google' ? 'Google' : p === 'email' ? 'code par e-mail' : p)).join(' ou ')
 
   async function deleteAccount() {
     setBusy(true)
@@ -157,8 +159,8 @@ function SignedIn({ session }: { session: Session }) {
     <>
       <p className="mt-1 text-sm text-fg">
         Connecté·e avec <span className="font-semibold">{session.user.email}</span>
-        {viaGoogle && <span className="text-muted"> (Google)</span>}
       </p>
+      <p className="mt-0.5 text-xs text-muted">Connexion possible par {ways}.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" onClick={() => supabase.auth.signOut()} className={secondaryButtonClass}>
           Me déconnecter

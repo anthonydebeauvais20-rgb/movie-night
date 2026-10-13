@@ -71,7 +71,10 @@ function Privacy() {
             l’Union européenne.
           </li>
           <li>GitHub (GitHub Pages), qui héberge le site et garde des journaux techniques, comme l’adresse IP, pour sa sécurité.</li>
-          <li>Google, seulement si tu choisis de te connecter avec ton compte Google.</li>
+          <li>
+            Google, si tu choisis de te connecter avec ton compte Google, et parce que les e-mails de connexion sont
+            envoyés par Gmail : Google voit alors ton adresse e-mail.
+          </li>
           <li>
             TMDB reçoit les recherches de films et séries faites par l’app, en passant par Supabase, sans aucune
             information sur toi. Les affiches, elles, sont chargées directement depuis TMDB, qui voit donc ton adresse
