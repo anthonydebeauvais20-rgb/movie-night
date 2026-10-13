@@ -8,13 +8,12 @@ import ResultCard from './components/ResultCard'
 import type { CurtainState } from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
 import Shelf from './components/Shelf'
-import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson, TmdbError } from './lib/tmdb'
+import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson } from './lib/tmdb'
 import type { TitleSearchResult } from './lib/tmdb'
 import {
   addIgnored,
   addToWatchlist,
   clearHistory,
-  getApiKey,
   getFilters,
   getHistory,
   getIgnored,
@@ -67,7 +66,6 @@ const refOf = (t: DetailedTitle): TitleRef => ({
 const legalRouteOf = (hash: string): LegalRoute | null => (LEGAL_ROUTES.includes(hash as LegalRoute) ? (hash as LegalRoute) : null)
 
 export default function App() {
-  const [hasApiKey, setHasApiKey] = useState(() => Boolean(getApiKey()))
   const [tab, setTab] = useState<Tab>('tirage')
   const [legalRoute, setLegalRoute] = useState<LegalRoute | null>(() => legalRouteOf(window.location.hash))
 
@@ -105,7 +103,6 @@ export default function App() {
   }, [drawCount])
 
   useEffect(() => {
-    if (!hasApiKey) return
     Promise.all([fetchPopularProviders('movie'), fetchPopularProviders('tv')])
       .then(([m, t]) => {
         const merged = new Map<number, WatchProvider>()
@@ -113,7 +110,7 @@ export default function App() {
         setProviders(Array.from(merged.values()))
       })
       .catch(() => {})
-  }, [hasApiKey])
+  }, [])
 
   function setFilters(next: Filters) {
     setFiltersState(next)
@@ -174,12 +171,8 @@ export default function App() {
       const details = await fetchDetails(picked.mediaType, picked.item.id)
       await minDuration
       reveal(details)
-    } catch (e) {
-      fail(
-        e instanceof TmdbError && e.message === 'invalid_api_key'
-          ? 'Clé API invalide. Vérifie-la dans les réglages.'
-          : 'Une erreur est survenue en contactant TMDB. Réessaie dans un instant.',
-      )
+    } catch {
+      fail('Une erreur est survenue en contactant TMDB. Réessaie dans un instant.')
     } finally {
       setLoading(false)
     }
@@ -367,14 +360,6 @@ export default function App() {
             onBack={() => {
               leaveLegalPage()
               setTab('reglages')
-            }}
-          />
-        ) : !hasApiKey ? (
-          <SettingsPanel
-            providers={providers}
-            onSaved={() => {
-              setHasApiKey(true)
-              setMyProvidersState(getMyProviders())
             }}
           />
         ) : tab === 'reglages' ? (

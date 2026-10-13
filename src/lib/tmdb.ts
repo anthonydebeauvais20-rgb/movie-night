@@ -1,24 +1,20 @@
 import type { CastMember, DetailedTitle, Filters, Genre, GenreMatch, GenreOption, MediaType, TmdbListItem, WatchProvider } from '../types'
-import { getApiKey, getRegion } from './storage'
+import { getRegion } from './storage'
 
-const BASE_URL = 'https://api.themoviedb.org/3'
+// TMDB is reached through our Supabase function (supabase/functions/tmdb), which holds the API key.
+const BASE_URL = 'https://psizuutdnanhhvzrdxqp.supabase.co/functions/v1/tmdb'
 const IMAGE_BASE = 'https://image.tmdb.org/t/p'
 
 export class TmdbError extends Error {}
 
 async function tmdbFetch<T>(path: string, params: Record<string, string | number | undefined> = {}): Promise<T> {
-  const apiKey = getApiKey()
-  if (!apiKey) throw new TmdbError('missing_api_key')
-
   const url = new URL(BASE_URL + path)
-  url.searchParams.set('api_key', apiKey)
   url.searchParams.set('language', 'fr-FR')
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== '') url.searchParams.set(key, String(value))
   }
 
   const res = await fetch(url.toString())
-  if (res.status === 401) throw new TmdbError('invalid_api_key')
   if (!res.ok) throw new TmdbError(`tmdb_error_${res.status}`)
   return res.json() as Promise<T>
 }

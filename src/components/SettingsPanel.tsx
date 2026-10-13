@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import {
-  getApiKey,
   getMyProviders,
   getRegion,
   getThemePreference,
-  setApiKey,
   setMyProviders,
   setRegion,
   setThemePreference,
@@ -26,13 +24,11 @@ const THEME_OPTIONS: [ThemePreference, string][] = [
 ]
 
 export default function SettingsPanel({ onSaved, providers = [] }: Props) {
-  const [key, setKey] = useState(getApiKey())
   const [region, setRegionState] = useState(getRegion())
   const [myProviders, setMyProvidersState] = useState<number[]>(getMyProviders())
   const [theme, setTheme] = useState<ThemePreference>(getThemePreference())
 
   function handleSave() {
-    setApiKey(key)
     setRegion(region)
     setMyProviders(myProviders)
     onSaved()
@@ -51,32 +47,9 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
 
   return (
     <div className="mx-auto max-w-lg rounded-sm border border-line bg-paper p-6">
-      <h2 className="font-poster text-2xl text-fg">Configuration</h2>
-      <p className="mt-2 text-sm text-muted">
-        L'app utilise TMDB (The Movie Database) pour les infos films/séries. Crée une clé API gratuite sur{' '}
-        <a
-          href="https://www.themoviedb.org/settings/api"
-          target="_blank"
-          rel="noreferrer"
-          className="font-semibold text-fg underline decoration-fluo decoration-2 underline-offset-4"
-        >
-          themoviedb.org
-        </a>{' '}
-        puis colle-la ci-dessous. Elle reste stockée uniquement sur cet appareil.
-      </p>
+      <h2 className="font-poster text-2xl text-fg">Réglages</h2>
 
       <label className="mt-5 block text-sm font-semibold text-fg">
-        Clé API TMDB
-        <input
-          type="text"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          placeholder="Colle ta clé API v3 ici"
-          className={`${inputClass} font-normal`}
-        />
-      </label>
-
-      <label className="mt-4 block text-sm font-semibold text-fg">
         Pays (disponibilité des plateformes de streaming)
         <select value={region} onChange={(e) => setRegionState(e.target.value)} className={`${inputClass} font-normal`}>
           <option value="FR">France</option>
@@ -115,7 +88,7 @@ export default function SettingsPanel({ onSaved, providers = [] }: Props) {
         </div>
       )}
 
-      <button onClick={handleSave} disabled={!key.trim()} className={`${primaryButtonClass} mt-6 w-full`}>
+      <button onClick={handleSave} className={`${primaryButtonClass} mt-6 w-full`}>
         Enregistrer
       </button>
 

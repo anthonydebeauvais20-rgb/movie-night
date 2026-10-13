@@ -73,8 +73,10 @@ function Privacy() {
           <li>GitHub (GitHub Pages), qui héberge le site et garde des journaux techniques, comme l’adresse IP, pour sa sécurité.</li>
           <li>Google, seulement si tu choisis de te connecter avec ton compte Google.</li>
           <li>
-            TMDB reçoit les recherches de films et séries faites par l’app, sans aucune information sur toi. Si tu relies
-            ton compte TMDB, les notes que tu choisis d’envoyer y sont publiées avec ton compte TMDB.
+            TMDB reçoit les recherches de films et séries faites par l’app, en passant par Supabase, sans aucune
+            information sur toi. Les affiches, elles, sont chargées directement depuis TMDB, qui voit donc ton adresse
+            IP comme n’importe quel site. Si tu relies ton compte TMDB, les notes que tu choisis d’envoyer y sont
+            publiées avec ton compte TMDB.
           </li>
         </ul>
       </Section>

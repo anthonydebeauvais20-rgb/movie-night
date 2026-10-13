@@ -33,12 +33,9 @@ export function setThemePreference(theme: ThemePreference): void {
   else localStorage.setItem(KEYS.theme, theme)
 }
 
-export function getApiKey(): string {
-  return localStorage.getItem(KEYS.apiKey) ?? ''
-}
-
-export function setApiKey(key: string): void {
-  localStorage.setItem(KEYS.apiKey, key.trim())
+// The TMDB key used to be pasted in the settings; it now lives on the server, so any copy left here is erased.
+export function forgetLegacyApiKey(): void {
+  localStorage.removeItem(KEYS.apiKey)
 }
 
 export function getRegion(): string {
