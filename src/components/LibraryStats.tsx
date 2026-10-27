@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { SeenEntry, TitleRef } from '../types'
+import { titleKey } from '../lib/draw'
 import { computeStats, decadeLabel, formatDuration, loadMissingFacts, readFacts } from '../lib/stats'
 
 interface Props {
@@ -52,19 +53,57 @@ function DurationFigure({ minutes }: { minutes: number }) {
   )
 }
 
+// Below this many unknown titles (one just marked as seen…), the stats show at once and simply catch up.
+const LOADER_THRESHOLD = 3
+
 export default function LibraryStats({ seen, watchlist }: Props) {
   const [facts, setFacts] = useState(readFacts)
+  // While TMDB is being asked; `loaderTotal` is set when enough titles are missing to wait behind a loader.
+  const [fetching, setFetching] = useState(false)
+  const [loaderTotal, setLoaderTotal] = useState(0)
 
-  // Genres and durations are fetched once per title, then kept on the device.
+  // Genres and durations are fetched once per title, then kept on the device: only the first opening waits.
   useEffect(() => {
     let cancelled = false
-    loadMissingFacts([...seen, ...watchlist], setFacts, () => cancelled)
+    const titles = [...seen, ...watchlist]
+    const known = readFacts()
+    const missing = titles.filter((t) => !known[titleKey(t.mediaType, t.id)]).length
+    if (missing === 0) {
+      // A run cut short by a library change may have left these on.
+      setFetching(false)
+      setLoaderTotal(0)
+      return
+    }
+    setFetching(true)
+    setLoaderTotal(missing >= LOADER_THRESHOLD ? missing : 0)
+    loadMissingFacts(titles, setFacts, () => cancelled).finally(() => {
+      if (cancelled) return
+      setFetching(false)
+      setLoaderTotal(0)
+    })
     return () => {
       cancelled = true
     }
   }, [seen, watchlist])
 
   const stats = useMemo(() => computeStats(seen, watchlist, facts), [seen, watchlist, facts])
+
+  if (fetching && loaderTotal > 0) {
+    const stillMissing = [...seen, ...watchlist].filter((t) => !facts[titleKey(t.mediaType, t.id)]).length
+    const done = Math.max(0, loaderTotal - stillMissing)
+    return (
+      <div className="rounded-sm border border-line bg-paper px-5 py-8 text-center" role="status">
+        <p className="font-poster text-lg text-fg">Chargement des statistiques en cours…</p>
+        <div className="mx-auto mt-4 h-2 max-w-xs border border-line">
+          <div className="h-full bg-ink transition-[width] duration-300" style={{ width: `${(done / loaderTotal) * 100}%` }} />
+        </div>
+        <p className="mt-2 text-xs tabular-nums text-muted">
+          {done} / {loaderTotal} titres
+        </p>
+        <p className="mt-3 text-xs text-muted">Seulement la première fois : ensuite, elles s’affichent tout de suite.</p>
+      </div>
+    )
+  }
 
   if (stats.total === 0) {
     return (
@@ -102,7 +141,10 @@ export default function LibraryStats({ seen, watchlist }: Props) {
         </div>
         <p className="mt-1.5 text-xs text-muted">
           Pour les séries, toutes les saisons sont comptées.
-          {stats.pending > 0 && ` Calcul en cours : encore ${plural(stats.pending, 'titre')}…`}
+          {stats.pending > 0 &&
+            (fetching
+              ? ` Calcul en cours : encore ${plural(stats.pending, 'titre')}…`
+              : ` ${stats.pending > 1 ? `${stats.pending} titres n’ont` : '1 titre n’a'} pas pu être compté${stats.pending > 1 ? 's' : ''} pour l’instant : nouvel essai à la prochaine ouverture.`)}
         </p>
       </div>
 
