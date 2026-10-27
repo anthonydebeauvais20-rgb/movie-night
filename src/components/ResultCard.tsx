@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import type { DetailedTitle } from '../types'
 import { posterUrl, providerLogoUrl } from '../lib/tmdb'
 import { spineStyleFor } from '../lib/spines'
@@ -14,7 +15,9 @@ interface Props {
   isSeen: boolean
   isFavorite: boolean
   isInWatchlist: boolean
-  onMarkSeen: () => void
+  // The seen entry has a rating or a review, which un-seeing would erase: ask first.
+  seenHasNotes: boolean
+  onToggleSeen: () => void
   onToggleFavorite: () => void
   onToggleWatchlist: () => void
   onIgnore: () => void
@@ -28,7 +31,8 @@ export default function ResultCard({
   isSeen,
   isFavorite,
   isInWatchlist,
-  onMarkSeen,
+  seenHasNotes,
+  onToggleSeen,
   onToggleFavorite,
   onToggleWatchlist,
   onIgnore,
@@ -36,6 +40,12 @@ export default function ResultCard({
 }: Props) {
   const [showTrailer, setShowTrailer] = useState(false)
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle')
+  const [confirmUnsee, setConfirmUnsee] = useState(false)
+
+  function handleSeenClick() {
+    if (isSeen && seenHasNotes) setConfirmUnsee(true)
+    else onToggleSeen()
+  }
 
   const poster = posterUrl(title.posterPath, 'w500')
   const providers = [...new Map([...title.providers.flatrate, ...title.providers.free, ...title.providers.ads].map((p) => [p.provider_id, p])).values()]
@@ -209,15 +219,41 @@ export default function ResultCard({
         )}
 
         <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-line/60 p-4 sm:px-6">
-          <button onClick={onMarkSeen} aria-pressed={isSeen} className={secondaryButton}>
-            {isSeen ? 'Vu' : 'Marquer comme vu'}
-          </button>
-          <button onClick={onToggleWatchlist} aria-pressed={isInWatchlist} className={secondaryButton}>
-            {isInWatchlist ? 'Dans « À voir »' : 'À voir plus tard'}
-          </button>
-          <button onClick={onToggleFavorite} aria-pressed={isFavorite} className={secondaryButton}>
-            {isFavorite ? 'Favori' : 'Ajouter aux favoris'}
-          </button>
+          {/* The tick only appears once the title is marked as seen. */}
+          <ToggleButton pressed={isSeen} onClick={handleSeenClick} icon={isSeen ? <CheckIcon /> : null} onLabel="Vu" offLabel="Marquer comme vu" />
+          <ToggleButton
+            pressed={isInWatchlist}
+            onClick={onToggleWatchlist}
+            icon={<BookmarkIcon filled={isInWatchlist} />}
+            onLabel="Dans « À voir »"
+            offLabel="À voir plus tard"
+          />
+          <ToggleButton
+            pressed={isFavorite}
+            onClick={onToggleFavorite}
+            icon={<StarIcon filled={isFavorite} />}
+            onLabel="Favori"
+            offLabel="Ajouter aux favoris"
+          />
+          {confirmUnsee && (
+            <div className="w-full rounded-sm border border-dashed border-line bg-tint px-3 py-2.5 text-sm text-fg" role="alert">
+              <p>Retirer « Vu » effacera aussi ta note et ton avis sur ce titre.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    setConfirmUnsee(false)
+                    onToggleSeen()
+                  }}
+                  className={secondaryButton}
+                >
+                  Retirer quand même
+                </button>
+                <button onClick={() => setConfirmUnsee(false)} className="px-2 text-sm text-muted underline underline-offset-4 hover:text-fg">
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
           <button onClick={handleShare} className="px-2 py-2 text-sm font-semibold text-fg underline underline-offset-4 hover:text-muted">
             {shareStatus === 'copied' ? 'Lien copié' : 'Partager'}
           </button>
@@ -234,5 +270,73 @@ export default function ResultCard({
         </div>
       </div>
     </article>
+  )
+}
+
+// Vu / À voir / Favori: when on, the button takes the brass of the "Déjà vu" tag, with a filled icon.
+function ToggleButton({
+  pressed,
+  onClick,
+  icon,
+  onLabel,
+  offLabel,
+}: {
+  pressed: boolean
+  onClick: () => void
+  icon: ReactNode
+  onLabel: string
+  offLabel: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={pressed}
+      className={`inline-flex items-center gap-1.5 rounded-sm border px-3.5 py-2 text-sm font-semibold transition-colors ${
+        pressed
+          ? 'border-fluo bg-fluo text-on-fluo shadow-[inset_0_0_0_2px_var(--color-paper)]'
+          : 'border-line text-fg hover:bg-tint'
+      }`}
+    >
+      {icon}
+      {pressed ? onLabel : offLabel}
+    </button>
+  )
+}
+
+const iconClass = 'h-[15px] w-[15px] shrink-0'
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className={iconClass} aria-hidden="true">
+      <path d="M2.5 8.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function BookmarkIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg viewBox="0 0 16 16" className={iconClass} aria-hidden="true">
+      <path
+        d="M4 1.5h8v13l-4-3-4 3z"
+        fill={filled ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth={filled ? 0 : 1.5}
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function StarIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={iconClass} aria-hidden="true">
+      <path
+        d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.2l-5.9 3.4 1.3-6.6L2.5 9.4l6.6-.8z"
+        fill={filled ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth={filled ? 0 : 2}
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }

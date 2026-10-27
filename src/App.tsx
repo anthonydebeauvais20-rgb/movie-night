@@ -9,7 +9,8 @@ import ResultCard from './components/ResultCard'
 import type { CurtainState } from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
 import Shelf from './components/Shelf'
-import { drawExclusions } from './lib/draw'
+import Welcome from './components/Welcome'
+import { drawAvoidingRecent, drawExclusions } from './lib/draw'
 import { reportError } from './lib/errorReporting'
 import { useSession } from './lib/useSession'
 import { useSync } from './lib/useSync'
@@ -48,6 +49,7 @@ const DEFAULT_FILTERS: Filters = {
   durationMin: 0,
   durationMax: 240,
   includeSeen: false,
+  includeObscure: false,
   personQuery: '',
 }
 
@@ -173,9 +175,9 @@ export default function App() {
           fail(`Aucune personne trouvée pour "${personName}".`)
           return
         }
-        picked = await pickRandomFromPerson(person.id, filters, excluded)
+        picked = await drawAvoidingRecent(excluded, drawHistory, (ex) => pickRandomFromPerson(person.id, filters, ex))
       } else {
-        picked = await pickRandom(filters, excluded, myProviders)
+        picked = await drawAvoidingRecent(excluded, drawHistory, (ex) => pickRandom(filters, ex, myProviders))
       }
 
       if (!picked) {
@@ -228,40 +230,26 @@ export default function App() {
     return watchlist.some((e) => e.id === id && e.mediaType === mediaType)
   }
 
-  function handleMarkSeen() {
+  const currentSeenEntry = result ? seenList.find((e) => e.id === result.id && e.mediaType === result.mediaType) : undefined
+
+  // A title just seen leaves the watchlist, as it does when added from the library.
+  function addResultToSeen(favorite: boolean) {
     if (!result) return
-    const existing = seenList.find((e) => e.id === result.id && e.mediaType === result.mediaType)
-    const entry: SeenEntry = existing ?? {
-      id: result.id,
-      mediaType: result.mediaType,
-      title: result.title,
-      posterPath: result.posterPath,
-      year: result.year,
-      dateAdded: new Date().toISOString(),
-      rating: null,
-      comment: '',
-      favorite: false,
-    }
-    setSeenList(upsertSeenEntry(entry))
+    setSeenList(upsertSeenEntry({ ...refOf(result), rating: null, comment: '', favorite }))
+    if (isInWatchlist(result.id, result.mediaType)) setWatchlist(removeFromWatchlist(result.id, result.mediaType))
+  }
+
+  // "Vu" toggles like the other buttons; un-seeing drops the title's rating, review and favorite too.
+  function handleToggleSeen() {
+    if (!result) return
+    if (currentSeenEntry) setSeenList(removeSeenEntry(result.id, result.mediaType))
+    else addResultToSeen(false)
   }
 
   function handleToggleFavorite() {
     if (!result) return
-    const existing = seenList.find((e) => e.id === result.id && e.mediaType === result.mediaType)
-    const entry: SeenEntry = existing
-      ? { ...existing, favorite: !existing.favorite }
-      : {
-          id: result.id,
-          mediaType: result.mediaType,
-          title: result.title,
-          posterPath: result.posterPath,
-          year: result.year,
-          dateAdded: new Date().toISOString(),
-          rating: null,
-          comment: '',
-          favorite: true,
-        }
-    setSeenList(upsertSeenEntry(entry))
+    if (currentSeenEntry) setSeenList(upsertSeenEntry({ ...currentSeenEntry, favorite: !currentSeenEntry.favorite }))
+    else addResultToSeen(true)
   }
 
   function handleToggleWatchlist() {
@@ -412,6 +400,7 @@ export default function App() {
           />
         ) : (
           <div className="space-y-5">
+            <Welcome />
             <FilterPanel filters={filters} onChange={setFilters} />
 
             <div>
@@ -443,7 +432,8 @@ export default function App() {
                   isSeen={isSeen(result.id, result.mediaType)}
                   isFavorite={isFavorite(result.id, result.mediaType)}
                   isInWatchlist={isInWatchlist(result.id, result.mediaType)}
-                  onMarkSeen={handleMarkSeen}
+                  seenHasNotes={Boolean(currentSeenEntry?.rating || currentSeenEntry?.comment.trim())}
+                  onToggleSeen={handleToggleSeen}
                   onToggleFavorite={handleToggleFavorite}
                   onToggleWatchlist={handleToggleWatchlist}
                   onIgnore={handleIgnore}

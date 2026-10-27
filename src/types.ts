@@ -78,6 +78,8 @@ export interface Filters {
   durationMin: number
   durationMax: number
   includeSeen: boolean
+  // Draws dig past the well-known titles into the long tail of the catalogue.
+  includeObscure: boolean
   personQuery: string
 }
 

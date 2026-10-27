@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Filters, TmdbListItem } from '../types'
-import { drawExclusions, titleKey } from './draw'
-import { dateWindow, genreCriteria, passesLanguage, pickRandom, pickRandomFromPerson, pickRandomTitle } from './tmdb'
+import { drawAvoidingRecent, drawExclusions, titleKey } from './draw'
+import { dateWindow, genreCriteria, pageCapFor, passesLanguage, pickRandom, pickRandomFromPerson, pickRandomTitle } from './tmdb'
 
 const FILTERS: Filters = {
   mediaType: 'both',
@@ -17,6 +17,7 @@ const FILTERS: Filters = {
   durationMin: 0,
   durationMax: 240,
   includeSeen: false,
+  includeObscure: false,
   personQuery: '',
 }
 const filters = (over: Partial<Filters> = {}): Filters => ({ ...FILTERS, ...over })
@@ -158,6 +159,57 @@ describe('pickRandomTitle', () => {
     await pickRandomTitle('movie', filters(), new Set(), [8, 337])
     expect(urls[0].searchParams.get('with_watch_providers')).toBe('8|337')
     expect(urls[0].searchParams.get('watch_region')).toBe('FR')
+  })
+})
+
+describe('variety', () => {
+  // A catalogue of `total` pages where page n holds the single title n.
+  function stubCatalogue(total: number) {
+    const pages: number[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string) => {
+        const page = Number(new URL(input).searchParams.get('page'))
+        pages.push(page)
+        return new Response(JSON.stringify({ total_pages: total, total_results: total, results: [item(page)] }))
+      }),
+    )
+    return pages
+  }
+
+  it('stays among well-known titles unless asked to dig deeper', () => {
+    expect(pageCapFor(filters(), 300)).toBe(25)
+    expect(pageCapFor(filters({ includeObscure: true }), 300)).toBe(200)
+    expect(pageCapFor(filters({ recent: '30d' }), 300)).toBe(3)
+    expect(pageCapFor(filters(), 4)).toBe(4)
+  })
+
+  it('draws from every page, not mostly the first one', async () => {
+    const pages = stubCatalogue(300)
+    const picked = new Set<number>()
+    for (let i = 0; i < 60; i++) picked.add((await pickRandomTitle('movie', filters(), new Set(), []))!.id)
+    // 60 draws over 25 equally likely pages: far more than a handful of distinct titles.
+    expect(picked.size).toBeGreaterThan(12)
+    expect(Math.max(...pages)).toBeLessThanOrEqual(25)
+  })
+
+  it('reaches the long tail when obscure titles are included', async () => {
+    const pages = stubCatalogue(300)
+    for (let i = 0; i < 40; i++) await pickRandomTitle('movie', filters({ includeObscure: true }), new Set(), [])
+    expect(Math.max(...pages)).toBeGreaterThan(25)
+  })
+
+  it('avoids recent draws, unless nothing else is left', async () => {
+    stubDiscover({ movie: [[item(1), item(2)]] })
+    const draw = (ex: Set<string>) => pickRandomTitle('movie', filters(), ex, [])
+    for (let i = 0; i < 10; i++) {
+      expect((await drawAvoidingRecent(new Set(), [{ id: 1, mediaType: 'movie' }], draw))?.id).toBe(2)
+    }
+    const recent = [
+      { id: 1, mediaType: 'movie' as const },
+      { id: 2, mediaType: 'movie' as const },
+    ]
+    expect([1, 2]).toContain((await drawAvoidingRecent(new Set(), recent, draw))?.id)
   })
 })
 

@@ -318,7 +318,7 @@ export default function FilterPanel({ filters, onChange }: Props) {
         </label>
       </Section>
 
-      <div className="border-t border-line/25 px-5 py-4">
+      <div className="grid gap-2.5 border-t border-line/25 px-5 py-4">
         <label className="flex items-center gap-2 text-sm text-fg">
           <input
             type="checkbox"
@@ -327,6 +327,15 @@ export default function FilterPanel({ filters, onChange }: Props) {
             className="h-4 w-4 accent-ink"
           />
           Inclure les films/séries déjà vus (pour en revoir un)
+        </label>
+        <label className="flex items-center gap-2 text-sm text-fg">
+          <input
+            type="checkbox"
+            checked={filters.includeObscure}
+            onChange={(e) => onChange({ ...filters, includeObscure: e.target.checked })}
+            className="h-4 w-4 accent-ink"
+          />
+          Inclure les titres méconnus (pour les plus curieux)
         </label>
       </div>
     </div>

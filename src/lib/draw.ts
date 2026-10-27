@@ -25,3 +25,24 @@ export function drawExclusions(
   if (current) keys.add(titleKey(current.mediaType, current.id))
   return keys
 }
+
+/** The exclusions plus the recent draws: tried first, so a draw doesn't land on what came up lately. */
+export function withRecentDraws(excluded: Set<string>, recent: TitleId[]): Set<string> {
+  return new Set([...excluded, ...recent.map((t) => titleKey(t.mediaType, t.id))])
+}
+
+/**
+ * Draws while avoiding recent draws, and only lets them back when nothing else matches the filters
+ * (a narrow selection may have fewer titles than the history holds).
+ */
+export async function drawAvoidingRecent<T>(
+  excluded: Set<string>,
+  recent: TitleId[],
+  draw: (excluded: Set<string>) => Promise<T | null>,
+): Promise<T | null> {
+  if (recent.length > 0) {
+    const fresh = await draw(withRecentDraws(excluded, recent))
+    if (fresh) return fresh
+  }
+  return draw(excluded)
+}

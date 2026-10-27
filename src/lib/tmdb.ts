@@ -185,9 +185,28 @@ async function discover(
   })
 }
 
-const MAX_PAGE_CAP = 200
-// Results are popularity-sorted, so the tail of a recent window is obscure releases; stay on the top pages.
+// Results are sorted by popularity, 20 per page: the first pages are titles most people know, the last ones
+// the catalogue's long tail. Draws stay among the ~500 best-known matches unless "titres méconnus" is ticked.
+const KNOWN_PAGE_CAP = 25
+const OBSCURE_PAGE_CAP = 200
+// The tail of a recent window is obscure releases; stay on the top pages.
 const RECENT_PAGE_CAP = 3
+const MAX_ATTEMPTS = 8
+
+export function pageCapFor(filters: Filters, totalPages: number): number {
+  const cap = filters.recent !== 'any' ? RECENT_PAGE_CAP : filters.includeObscure ? OBSCURE_PAGE_CAP : KNOWN_PAGE_CAP
+  return Math.max(1, Math.min(totalPages, cap))
+}
+
+// A few distinct page numbers in random order.
+function randomPages(pageCap: number, count: number): number[] {
+  const pages = Array.from({ length: pageCap }, (_, i) => i + 1)
+  for (let i = 0; i < Math.min(count, pageCap); i++) {
+    const j = i + Math.floor(Math.random() * (pageCap - i))
+    ;[pages[i], pages[j]] = [pages[j], pages[i]]
+  }
+  return pages.slice(0, count)
+}
 
 /** Picks a random title matching the filters, retrying a few random pages before giving up. */
 export async function pickRandomTitle(
@@ -199,20 +218,12 @@ export async function pickRandomTitle(
   const criteria = genreCriteria(filters, mediaType)
   if (!criteria) return null
 
+  // Page 1 tells how many pages match; after that, every page has the same chance, page 1 included.
+  // (Always drawing from page 1 first kept the same twenty titles coming back.)
   const firstPage = await discover(mediaType, filters, 1, criteria, providerIds)
   if (firstPage.total_results === 0) return null
 
-  const pageCap = Math.min(firstPage.total_pages, filters.recent === 'any' ? MAX_PAGE_CAP : RECENT_PAGE_CAP)
-  const attempts = Math.min(pageCap, 8)
-  const triedPages = new Set<number>()
-
-  for (let i = 0; i < attempts; i++) {
-    let page = i === 0 ? 1 : Math.floor(Math.random() * pageCap) + 1
-    while (triedPages.has(page) && triedPages.size < pageCap) {
-      page = Math.floor(Math.random() * pageCap) + 1
-    }
-    triedPages.add(page)
-
+  for (const page of randomPages(pageCapFor(filters, firstPage.total_pages), MAX_ATTEMPTS)) {
     const data = page === 1 ? firstPage : await discover(mediaType, filters, page, criteria, providerIds)
     const candidates = data.results.filter((r) => !excluded.has(titleKey(mediaType, r.id)) && passesLanguage(r, filters))
     if (candidates.length > 0) {
