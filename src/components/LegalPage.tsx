@@ -8,7 +8,7 @@ interface Props {
   onBack: () => void
 }
 
-const UPDATED = '13 octobre 2026'
+const UPDATED = '27 octobre 2026'
 const CONTACT_EMAIL = 'anthodu95@gmail.com'
 
 // Something still to fill in or confirm before the app is opened to other people.
@@ -51,7 +51,12 @@ function Privacy() {
           <li>
             Ta bibliothèque : titres vus, notes, avis, favoris, liste « À voir », titres écartés et derniers tirages.
           </li>
-          <li>Tes réglages : filtres, plateformes, pays et apparence.</li>
+          <li>Tes réglages : filtres, plateformes et pays. L’apparence (clair ou sombre) reste sur chaque appareil.</li>
+          <li>
+            Les rapports d’erreur : quand l’app plante ou échoue, elle envoie le message technique de l’erreur, la page
+            concernée, le navigateur utilisé, la version de l’app et si tu étais connecté·e. Ni ton compte, ni ton adresse
+            e-mail, ni ta bibliothèque n’y figurent.
+          </li>
         </ul>
         <p>Pas de publicité, pas de traceurs, et rien n’est vendu.</p>
       </Section>
@@ -62,6 +67,7 @@ function Privacy() {
           plus te proposer ce que tu as déjà vu ou écarté. C’est le service que tu demandes en créant un compte (base
           légale : l’exécution de ce service).
         </p>
+        <p>Les rapports d’erreur servent à corriger les problèmes de l’app (base légale : l’intérêt légitime à la faire marcher).</p>
       </Section>
 
       <Section title="Qui d’autre y a accès">
@@ -93,6 +99,7 @@ function Privacy() {
           Un compte resté inactif pendant 2 ans est supprimé, après un e-mail pour te prévenir et te laisser le temps de
           t’y reconnecter.
         </p>
+        <p>Les rapports d’erreur sont effacés automatiquement au bout de 30 jours.</p>
       </Section>
 
       <Section title="Sur ton appareil">

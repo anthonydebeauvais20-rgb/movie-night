@@ -9,6 +9,8 @@ import ResultCard from './components/ResultCard'
 import type { CurtainState } from './components/ResultCard'
 import SettingsPanel from './components/SettingsPanel'
 import Shelf from './components/Shelf'
+import { drawExclusions } from './lib/draw'
+import { reportError } from './lib/errorReporting'
 import { useSession } from './lib/useSession'
 import { useSync } from './lib/useSync'
 import { fetchDetails, fetchPopularProviders, pickRandom, pickRandomFromPerson, searchPerson } from './lib/tmdb'
@@ -137,8 +139,6 @@ export default function App() {
     saveFilters(next)
   }
 
-  const seenIds = useMemo(() => new Set(seenList.map((e) => e.id)), [seenList])
-  const ignoredIds = useMemo(() => new Set(ignored.map((e) => e.id)), [ignored])
   const shelfLabels = useMemo(() => [...watchlist, ...seenList].map((e) => e.title), [watchlist, seenList])
 
   function fail(message: string) {
@@ -163,9 +163,7 @@ export default function App() {
     const minDuration = wait(MIN_DRAW_MS)
 
     try {
-      // Set-aside titles are never offered again, even when "include already seen" is on.
-      const effectiveExclude = new Set([...(filters.includeSeen ? [] : seenIds), ...ignoredIds])
-      if (result) effectiveExclude.add(result.id)
+      const excluded = drawExclusions(filters, seenList, ignored, result)
       const personName = filters.personQuery.trim()
 
       let picked: Awaited<ReturnType<typeof pickRandom>>
@@ -175,9 +173,9 @@ export default function App() {
           fail(`Aucune personne trouvée pour "${personName}".`)
           return
         }
-        picked = await pickRandomFromPerson(person.id, filters, effectiveExclude)
+        picked = await pickRandomFromPerson(person.id, filters, excluded)
       } else {
-        picked = await pickRandom(filters, effectiveExclude, myProviders)
+        picked = await pickRandom(filters, excluded, myProviders)
       }
 
       if (!picked) {
@@ -191,7 +189,8 @@ export default function App() {
       const details = await fetchDetails(picked.mediaType, picked.item.id)
       await minDuration
       reveal(details)
-    } catch {
+    } catch (e) {
+      reportError('draw', e)
       fail('Une erreur est survenue en contactant TMDB. Réessaie dans un instant.')
     } finally {
       setLoading(false)

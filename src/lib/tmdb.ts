@@ -1,4 +1,5 @@
 import type { CastMember, DetailedTitle, Filters, Genre, GenreMatch, GenreOption, MediaType, TmdbListItem, WatchProvider } from '../types'
+import { titleKey } from './draw'
 import { getRegion } from './storage'
 
 // TMDB is reached through our Supabase function (supabase/functions/tmdb), which holds the API key.
@@ -87,7 +88,7 @@ interface GenreCriteria {
 const isId = (id: number | null): id is number => id !== null
 
 /** Resolves the genre selection to ids for one media type, or null when that type can never satisfy it. */
-function genreCriteria(filters: Filters, mediaType: MediaType): GenreCriteria | null {
+export function genreCriteria(filters: Filters, mediaType: MediaType): GenreCriteria | null {
   const wanted = filters.genreInclude.map((label) => genreIdFor(label, mediaType))
   if (wanted.length > 0) {
     const reachable = filters.genreMatch === 'all' ? wanted.every(isId) : wanted.some(isId)
@@ -121,7 +122,7 @@ function languageCodes(labels: string[]): string[] {
 }
 
 // TMDB ignores without_original_language, so excluded languages are filtered out of each results page instead.
-function passesLanguage(item: TmdbListItem, filters: Filters): boolean {
+export function passesLanguage(item: TmdbListItem, filters: Filters): boolean {
   const language = item.original_language ?? ''
   const wanted = languageCodes(filters.languageInclude)
   if (wanted.length > 0 && !wanted.includes(language)) return false
@@ -137,7 +138,7 @@ function toLocalIsoDate(date: Date): string {
 }
 
 /** Release-date bounds: the "recent" window when set, otherwise the year range. */
-function dateWindow(filters: Filters): { from: string; to: string } {
+export function dateWindow(filters: Filters): { from: string; to: string } {
   if (filters.recent === 'any') {
     return { from: `${filters.yearMin}-01-01`, to: `${filters.yearMax}-12-31` }
   }
@@ -192,7 +193,7 @@ const RECENT_PAGE_CAP = 3
 export async function pickRandomTitle(
   mediaType: MediaType,
   filters: Filters,
-  excludeIds: Set<number>,
+  excluded: Set<string>,
   providerIds: number[],
 ): Promise<TmdbListItem | null> {
   const criteria = genreCriteria(filters, mediaType)
@@ -213,7 +214,7 @@ export async function pickRandomTitle(
     triedPages.add(page)
 
     const data = page === 1 ? firstPage : await discover(mediaType, filters, page, criteria, providerIds)
-    const candidates = data.results.filter((r) => !excludeIds.has(r.id) && passesLanguage(r, filters))
+    const candidates = data.results.filter((r) => !excluded.has(titleKey(mediaType, r.id)) && passesLanguage(r, filters))
     if (candidates.length > 0) {
       return candidates[Math.floor(Math.random() * candidates.length)]
     }
@@ -225,21 +226,21 @@ export async function pickRandomTitle(
 /** High-level random pick: handles the "both films & séries" case by trying one type, then the other. */
 export async function pickRandom(
   filters: Filters,
-  excludeIds: Set<number>,
+  excluded: Set<string>,
   providerIds: number[],
 ): Promise<{ item: TmdbListItem; mediaType: MediaType } | null> {
   if (filters.mediaType !== 'both') {
-    const item = await pickRandomTitle(filters.mediaType, filters, excludeIds, providerIds)
+    const item = await pickRandomTitle(filters.mediaType, filters, excluded, providerIds)
     return item ? { item, mediaType: filters.mediaType } : null
   }
 
   const first: MediaType = Math.random() < 0.5 ? 'movie' : 'tv'
   const second: MediaType = first === 'movie' ? 'tv' : 'movie'
 
-  const firstItem = await pickRandomTitle(first, filters, excludeIds, providerIds)
+  const firstItem = await pickRandomTitle(first, filters, excluded, providerIds)
   if (firstItem) return { item: firstItem, mediaType: first }
 
-  const secondItem = await pickRandomTitle(second, filters, excludeIds, providerIds)
+  const secondItem = await pickRandomTitle(second, filters, excluded, providerIds)
   return secondItem ? { item: secondItem, mediaType: second } : null
 }
 
@@ -302,7 +303,7 @@ export async function searchPerson(query: string): Promise<{ id: number; name: s
 export async function pickRandomFromPerson(
   personId: number,
   filters: Filters,
-  excludeIds: Set<number>,
+  excluded: Set<string>,
 ): Promise<{ item: TmdbListItem; mediaType: MediaType } | null> {
   const data = await tmdbFetch<{ cast: CombinedCreditItem[]; crew: CombinedCreditItem[] }>(
     `/person/${personId}/combined_credits`,
@@ -319,7 +320,7 @@ export async function pickRandomFromPerson(
     seen.add(key)
 
     if (filters.mediaType !== 'both' && c.media_type !== filters.mediaType) return false
-    if (excludeIds.has(c.id)) return false
+    if (excluded.has(titleKey(c.media_type, c.id))) return false
     if (!passesLanguage(c, filters)) return false
 
     const date = c.release_date || c.first_air_date || ''
