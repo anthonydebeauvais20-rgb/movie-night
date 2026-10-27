@@ -3,6 +3,35 @@ import { primaryButtonClass } from '../lib/ui'
 
 // Per device, like the theme: someone opening the app on a new phone gets the explanation again.
 const INTRO_KEY = 'movienight:introDismissed'
+const TAGLINE_KEY = 'movienight:lastTagline'
+
+// A draw of its own: one of these opens the draw tab, a different one from the previous opening.
+const TAGLINES: [title: string, line: string][] = [
+  ['Silence, ça tire !', 'Donne tes envies, ou rien du tout : le hasard choisit le film ou la série du soir.'],
+  ['Fini les heures à hésiter devant le catalogue.', 'Un tirage, un film ou une série, et la soirée peut commencer.'],
+  ['Trop de choix ? On choisit pour toi.', 'Tes envies en quelques clics, le hasard fait le reste.'],
+  ['Qu’est-ce qu’on regarde ce soir ?', 'Choisis tes envies, ou laisse faire le hasard.'],
+]
+
+function pickTagline(): [string, string] {
+  let last = -1
+  try {
+    last = Number(localStorage.getItem(TAGLINE_KEY) ?? -1)
+  } catch {
+    // No storage: any tagline will do.
+  }
+  const choices = TAGLINES.map((_, i) => i).filter((i) => i !== last)
+  const index = choices[Math.floor(Math.random() * choices.length)]
+  try {
+    localStorage.setItem(TAGLINE_KEY, String(index))
+  } catch {
+    // Same as above.
+  }
+  return TAGLINES[index]
+}
+
+// Picked once per opening of the app, so it doesn't change when coming back to the draw tab.
+const TAGLINE = pickTagline()
 
 function introDismissed(): boolean {
   try {
@@ -33,10 +62,8 @@ export default function Welcome() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="font-poster text-[26px] leading-tight text-fg [text-wrap:balance]">Qu’est-ce qu’on se regarde ce soir&nbsp;?</h2>
-        <p className="mt-1.5 max-w-prose text-sm text-muted">
-          Choisis tes envies, ou rien du tout, et laisse le hasard choisir le film ou la série.
-        </p>
+        <h2 className="font-poster text-[26px] leading-tight text-fg [text-wrap:balance]">{TAGLINE[0]}</h2>
+        <p className="mt-1.5 max-w-prose text-sm text-muted">{TAGLINE[1]}</p>
       </div>
 
       {showIntro && (
