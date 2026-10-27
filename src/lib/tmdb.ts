@@ -369,6 +369,32 @@ function pickTrailerKey(videos: VideoItem[]): string | null {
   )
 }
 
+// What the library stats need about a title: its genres and how long it takes to watch.
+export interface TitleFacts {
+  genreIds: number[]
+  // A film's runtime, or a series' every episode put together (estimated when TMDB has no episode length).
+  minutes: number | null
+}
+
+// Used when TMDB has no episode length at all: roughly a drama episode.
+const DEFAULT_EPISODE_MINUTES = 45
+
+export async function fetchTitleFacts(mediaType: MediaType, id: number): Promise<TitleFacts> {
+  const data = await tmdbFetch<{
+    genres?: Genre[]
+    runtime?: number | null
+    number_of_episodes?: number | null
+    episode_run_time?: number[]
+    last_episode_to_air?: { runtime?: number | null } | null
+  }>(`/${mediaType}/${id}`)
+  const genreIds = (data.genres ?? []).map((g) => g.id)
+  if (mediaType === 'movie') return { genreIds, minutes: data.runtime || null }
+
+  const episodes = data.number_of_episodes ?? 0
+  const perEpisode = data.episode_run_time?.[0] || data.last_episode_to_air?.runtime || DEFAULT_EPISODE_MINUTES
+  return { genreIds, minutes: episodes > 0 ? episodes * perEpisode : null }
+}
+
 export async function fetchDetails(mediaType: MediaType, id: number): Promise<DetailedTitle> {
   const region = getRegion()
 

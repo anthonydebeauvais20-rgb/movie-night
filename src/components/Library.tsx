@@ -7,6 +7,7 @@ import { spineHeightFor, spineStyleFor } from '../lib/spines'
 import { getLibraryView, setLibraryView } from '../lib/storage'
 import { chipClass, primaryButtonClass, secondaryButtonClass } from '../lib/ui'
 import AddSeenSearch from './AddSeenSearch'
+import LibraryStats from './LibraryStats'
 
 interface Props {
   entries: SeenEntry[]
@@ -37,6 +38,16 @@ const VIEW_OPTIONS: [LibraryView, string][] = [
   ['shelf', 'Étagère'],
   ['posters', 'Affiches'],
 ]
+
+function StatsIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+      <rect x="1" y="9" width="3" height="6" />
+      <rect x="6.5" y="4" width="3" height="11" />
+      <rect x="12" y="1" width="3" height="14" />
+    </svg>
+  )
+}
 
 export default function Library({
   entries,
@@ -86,6 +97,7 @@ export default function Library({
   }
 
   const isShelf = view === 'shelf'
+  const isStats = view === 'stats'
   const emptyMessage =
     filter === 'watchlist'
       ? 'Rien dans ta liste « À voir ». Ajoute un résultat de tirage avec le bouton « À voir plus tard ».'
@@ -100,28 +112,44 @@ export default function Library({
       <AddSeenSearch seenKeys={seenKeys} onAdd={onAddSeen} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={() => changeFilter('all')} className={chipClass(filter === 'all')}>
-          Vus ({entries.length})
-        </button>
-        <button onClick={() => changeFilter('favorites')} className={chipClass(filter === 'favorites')}>
-          Favoris ({entries.filter((e) => e.favorite).length})
-        </button>
-        <button onClick={() => changeFilter('watchlist')} className={chipClass(filter === 'watchlist')}>
-          À voir ({watchlist.length})
-        </button>
-        <button onClick={() => changeFilter('ignored')} className={chipClass(filter === 'ignored')}>
-          Écartés ({ignored.length})
-        </button>
-        <div className="ml-auto flex gap-2" role="group" aria-label="Affichage">
+        {!isStats && (
+          <>
+            <button onClick={() => changeFilter('all')} className={chipClass(filter === 'all')}>
+              Vus ({entries.length})
+            </button>
+            <button onClick={() => changeFilter('favorites')} className={chipClass(filter === 'favorites')}>
+              Favoris ({entries.filter((e) => e.favorite).length})
+            </button>
+            <button onClick={() => changeFilter('watchlist')} className={chipClass(filter === 'watchlist')}>
+              À voir ({watchlist.length})
+            </button>
+            <button onClick={() => changeFilter('ignored')} className={chipClass(filter === 'ignored')}>
+              Écartés ({ignored.length})
+            </button>
+          </>
+        )}
+        <div className="ml-auto flex flex-wrap items-center gap-2" role="group" aria-label="Affichage">
           {VIEW_OPTIONS.map(([value, label]) => (
             <button key={value} onClick={() => changeView(value)} aria-pressed={view === value} className={chipClass(view === value)}>
               {label}
             </button>
           ))}
+          {/* Set apart: the stats are a summary of the library, not another way to lay it out. */}
+          <span className="mx-1 h-5 w-px bg-line/50" aria-hidden="true" />
+          <button
+            onClick={() => changeView('stats')}
+            aria-pressed={isStats}
+            className={`${chipClass(isStats)} inline-flex items-center gap-1.5`}
+          >
+            <StatsIcon />
+            Stats
+          </button>
         </div>
       </div>
 
-      {shown.length === 0 ? (
+      {isStats ? (
+        <LibraryStats seen={entries} watchlist={watchlist} />
+      ) : shown.length === 0 ? (
         <p className="rounded-sm border border-dashed border-line/60 px-4 py-6 text-center text-sm text-muted">
           {emptyMessage}
         </p>

@@ -14,10 +14,21 @@ const KEYS = {
   ignored: 'movienight:ignored',
   history: 'movienight:history',
   sync: 'movienight:sync',
+  // Genres and durations fetched for the stats (src/lib/stats.ts): derived from the library, so they go with it.
+  titleFacts: 'movienight:titleFacts',
 } as const
 
 // What an account carries from device to device; the theme and the library view stay per device.
-const ACCOUNT_KEYS = [KEYS.seen, KEYS.watchlist, KEYS.ignored, KEYS.history, KEYS.filters, KEYS.region, KEYS.myProviders]
+const ACCOUNT_KEYS = [
+  KEYS.seen,
+  KEYS.watchlist,
+  KEYS.ignored,
+  KEYS.history,
+  KEYS.filters,
+  KEYS.region,
+  KEYS.myProviders,
+  KEYS.titleFacts,
+]
 
 // After signing out or deleting the account, nothing of it stays on this device.
 export function clearAccountData(): void {
@@ -35,7 +46,8 @@ export function setSyncSnapshot(raw: string | null): void {
 }
 
 export function getLibraryView(): LibraryView {
-  return localStorage.getItem(KEYS.libraryView) === 'posters' ? 'posters' : 'shelf'
+  const raw = localStorage.getItem(KEYS.libraryView)
+  return raw === 'posters' || raw === 'stats' ? raw : 'shelf'
 }
 
 export function setLibraryView(view: LibraryView): void {
